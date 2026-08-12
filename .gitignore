@@ -1,0 +1,29 @@
+# 🔐 외부 인프라 정보는 어떤 경우에도 업로드 금지 (§0, §12)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.db
+backend/uploads/
+
+# Node
+node_modules/
+.next/
+out/
+build/
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
