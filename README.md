@@ -1,7 +1,12 @@
 # FIRST LABEL
 
-유당 관련 성분을 **최상단에 재배치하고 하이라이트**해 주는 개인 맞춤형 식품 정보 서비스.
-제주 해커톤 MVP.
+식품 정보의 불균형을 줄이고, 한 번의 검색으로 주의 성분을 이해해 더 나은 대안까지
+선택하도록 돕는 **개인 맞춤형 식품 정보 서비스**입니다.
+
+유당 관련 성분을 **최상단에 재배치하고 하이라이트**해 줍니다. 제주 해커톤 MVP.
+
+- 앱 https://first-label-app.vercel.app
+- API https://first-label-api.vercel.app/docs
 
 ```
 first-label/
