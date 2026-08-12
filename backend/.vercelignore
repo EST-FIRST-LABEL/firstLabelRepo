@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+uploads/
+tests/
+*.db
+Dockerfile
+.dockerignore
