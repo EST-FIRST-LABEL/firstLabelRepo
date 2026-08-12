@@ -1,0 +1,23 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+sqlalchemy==2.0.36
+pydantic==2.10.4
+pydantic-settings==2.7.0
+python-multipart==0.0.20
+bcrypt==4.2.1
+PyJWT==2.10.1
+httpx==0.28.1
+python-dotenv==1.0.1
+
+# Postgres(Supabase) 연결 시 필요
+psycopg2-binary==2.9.10
+
+# Supabase Storage 업로드 시 필요 (미설정이면 로컬 uploads/ 저장으로 fallback)
+supabase==2.11.0
+
+# OCR (설치 용량 큼. 미설치 시 /api/v1/scan 은 503 반환)
+# paddlepaddle==2.6.2
+# paddleocr==2.9.1
+
+# 벡터 임베딩 (Supabase pgvector)
+pgvector==0.3.6
