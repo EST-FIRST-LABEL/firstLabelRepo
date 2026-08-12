@@ -1,0 +1,43 @@
+{
+  "groups": [
+    {
+      "group_code": "LACTOSE",
+      "group_name": "유당불내증 필터",
+      "safe_signals": ["락타아제", "유당분해", "유당을분해", "무유당", "락토프리", "lactosefree", "lactose free"],
+      "keywords": [
+        { "keyword": "유당", "aliases": ["락토오스", "락토스", "lactose"], "risk_level": "DANGER", "description": "우유에 들어 있는 당분. 유당불내증이 있으면 복통·설사·복부 팽만감을 유발할 수 있어요." },
+        { "keyword": "탈지분유", "aliases": ["말지분유", "탈지 분유"], "risk_level": "DANGER", "description": "우유에서 지방을 제거하고 건조한 분말이에요. 유당이 그대로 남아 있어요." },
+        { "keyword": "전지분유", "aliases": ["전지 분유"], "risk_level": "DANGER", "description": "우유를 그대로 건조한 분말이에요. 유당 함량이 높아요." },
+        { "keyword": "분유", "aliases": ["혼합분유", "조제분유"], "risk_level": "DANGER", "description": "우유를 건조한 분말로 유당이 포함돼요." },
+        { "keyword": "원유", "aliases": ["생우유"], "risk_level": "DANGER", "description": "가공하지 않은 우유예요. 유당이 그대로 들어 있어요." },
+        { "keyword": "우유", "aliases": ["전유", "저지방우유"], "risk_level": "DANGER", "description": "유당을 가장 많이 포함하는 대표 원료예요." },
+        { "keyword": "연유", "aliases": ["가당연유", "무당연유"], "risk_level": "DANGER", "description": "우유를 농축한 원료로 유당이 농축돼 있어요." },
+        { "keyword": "유크림", "aliases": ["가공유크림", "생크림", "유지방크림"], "risk_level": "DANGER", "description": "우유에서 분리한 크림으로 유당이 남아 있어요." },
+        { "keyword": "버터밀크", "aliases": [], "risk_level": "DANGER", "description": "버터를 만들고 남은 액체로 유당이 포함돼요." },
+        { "keyword": "유청", "aliases": ["유청분말", "유청단백", "훼이", "whey"], "risk_level": "WARNING", "description": "치즈 제조 부산물이에요. 정제도에 따라 유당이 남아 있을 수 있어요." },
+        { "keyword": "농축유청단백", "aliases": ["WPC", "농축유청단백질"], "risk_level": "WARNING", "description": "유청을 농축한 단백질로 유당이 일부(2~8%) 남아 있어요." },
+        { "keyword": "분리유단백", "aliases": ["분리유청단백", "WPI", "유단백"], "risk_level": "WARNING", "description": "유래 단백질이에요. 유당은 적지만 미량 남을 수 있어요." },
+        { "keyword": "카제인", "aliases": ["카제인나트륨", "카제인칼슘", "카세인"], "risk_level": "WARNING", "description": "우유 단백질이에요. 유당은 거의 없지만 우유 알레르기 반응을 유발할 수 있어요." },
+        { "keyword": "치즈", "aliases": ["가공치즈", "자연치즈", "치즈분말"], "risk_level": "WARNING", "description": "숙성도에 따라 유당이 남아 있을 수 있어요." },
+        { "keyword": "버터", "aliases": ["가공버터", "버터오일"], "risk_level": "WARNING", "description": "유지방 위주라 유당은 적지만 미량 포함될 수 있어요." },
+        { "keyword": "유고형분", "aliases": ["무지유고형분", "유고형분말"], "risk_level": "WARNING", "description": "우유에서 수분을 뺀 성분 전체를 말해요. 유당이 포함될 수 있어요." },
+        { "keyword": "발효유", "aliases": ["요구르트", "요거트", "발효유분말"], "risk_level": "CAUTION", "description": "발효 과정에서 유당이 일부 분해되지만 남아 있을 수 있어요." },
+        { "keyword": "유당분해우유", "aliases": [], "risk_level": "SAFE", "description": "락타아제로 유당을 분해한 우유예요." },
+        { "keyword": "밀크향", "aliases": ["유향", "우유향"], "risk_level": "CAUTION", "description": "향료라 유당은 거의 없지만 유래 성분이 섞일 수 있어요." }
+      ]
+    },
+    {
+      "group_code": "GENERAL",
+      "group_name": "일반 주의 성분",
+      "safe_signals": [],
+      "keywords": [
+        { "keyword": "설탕", "aliases": ["백설탕", "기타설탕", "황설탕", "정백당"], "risk_level": "CAUTION", "description": "첨가당이에요. 과다 섭취 시 혈당이 빠르게 오를 수 있어요." },
+        { "keyword": "과당", "aliases": ["액상과당", "果糖"], "risk_level": "CAUTION", "description": "액상 형태의 첨가당으로 흡수가 빨라요." },
+        { "keyword": "시럽", "aliases": ["물엿", "올리고당시럽", "포도당시럽"], "risk_level": "CAUTION", "description": "첨가당 계열이에요." },
+        { "keyword": "말티톨", "aliases": ["D-말티톨", "말티톨시럽"], "risk_level": "CAUTION", "description": "당알코올이에요. 많이 먹으면 복부 팽만·설사를 유발할 수 있어요." },
+        { "keyword": "쇼트닝", "aliases": ["경화유"], "risk_level": "CAUTION", "description": "가공 유지로 트랜스지방이 포함될 수 있어요." },
+        { "keyword": "합성향료", "aliases": ["합성착향료"], "risk_level": "CAUTION", "description": "인공적으로 만든 향료예요." }
+      ]
+    }
+  ]
+}
