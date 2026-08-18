@@ -6,7 +6,10 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parents[2]  # backend/
 load_dotenv(BASE_DIR / ".env")
 
-# 서버리스(Vercel)는 파일시스템이 읽기 전용이고 /tmp 만 쓸 수 있다.
+# Cloud Run은 K_SERVICE 환경변수를 자동으로 제공한다.
+IS_CLOUD_RUN = bool(os.getenv("K_SERVICE"))
+
+# 서버리스(Vercel/Lambda)는 파일시스템이 읽기 전용이고 /tmp 만 쓸 수 있다.
 IS_SERVERLESS = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
 WRITABLE_DIR = Path("/tmp") if IS_SERVERLESS else BASE_DIR
 
