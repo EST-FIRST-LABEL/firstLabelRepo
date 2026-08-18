@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.db import Product, Registration, User, get_db
 from app.core.security import current_user
 from app.services import alan
@@ -122,7 +123,10 @@ def cancel(registration_id: int, db: Session = Depends(get_db), user: User = Dep
 
 @router.post("/{registration_id}/approve")
 def approve(registration_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
-    """검토 승인 → products 테이블로 반영 (운영자 화면이 없어 데모용으로 열어둠)."""
+    """검토 승인 → products 테이블로 반영. 운영자 화면이 없어 ADMIN_LOGIN_IDS 로만 제한한다."""
+    if user.login_id not in settings.ADMIN_LOGIN_IDS:
+        raise HTTPException(403, "운영자만 사용할 수 있습니다.")
+
     reg = db.get(Registration, registration_id)
     if not reg:
         raise HTTPException(404, "등록 요청을 찾을 수 없습니다.")

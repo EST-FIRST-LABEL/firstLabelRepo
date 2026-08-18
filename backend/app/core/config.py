@@ -15,12 +15,32 @@ def _csv(name: str) -> list[str]:
     return [v.strip() for v in os.getenv(name, "").split(",") if v.strip()]
 
 
+def _jwt_secret() -> str:
+    """미설정 시 로컬 개발은 기본값 허용, 배포(Vercel/Lambda) 환경은 기동을 막는다.
+
+    이슈 #11: JWT_SECRET 기본값("dev-only-change-me")이 배포 환경에도 조용히
+    쓰일 수 있어 토큰 위조가 가능했던 문제.
+    """
+    v = os.getenv("JWT_SECRET", "")
+    if v:
+        return v
+    if IS_SERVERLESS:
+        raise RuntimeError(
+            "JWT_SECRET 환경변수가 설정되지 않았습니다. 배포 환경에서는 "
+            "기본값(dev-only-change-me)을 사용할 수 없습니다."
+        )
+    return "dev-only-change-me"
+
+
 class Settings:
     # DB: Supabase Postgres 커넥션 스트링을 넣으면 그대로 사용, 비어 있으면 로컬 SQLite
     DATABASE_URL: str = os.getenv("DATABASE_URL") or f"sqlite:///{WRITABLE_DIR / 'firstlabel.db'}"
 
-    JWT_SECRET: str = os.getenv("JWT_SECRET", "dev-only-change-me")
+    JWT_SECRET: str = _jwt_secret()
     JWT_EXPIRE_DAYS: int = int(os.getenv("JWT_EXPIRE_DAYS", "14"))
+
+    # 운영자 계정 login_id 목록(쉼표 구분). 비우면 승인(approve) 엔드포인트를 아무도 못 쓴다.
+    ADMIN_LOGIN_IDS: list[str] = _csv("ADMIN_LOGIN_IDS")
 
     # Supabase Storage (미설정 시 backend/uploads 로컬 저장 + /uploads 정적 서빙)
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
