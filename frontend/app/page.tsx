@@ -2,55 +2,38 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import * as I from "@/components/icons";
-import { BottomNav, ProductThumb, Screen, Stars } from "@/components/ui";
-import { api, auth, type Product } from "@/lib/api";
+import { ProductThumb, Screen, Stars } from "@/components/ui";
+import { ThreeTabNav } from "@/components/three-tab-nav";
+import { api, type Product } from "@/lib/api";
 
 type HomeData = { categories: { code: string; label: string; icon: string }[]; recommended: Product[] };
-type History = { id: number; keyword: string };
 type Suggestion = { id: number; name: string; maker_name: string };
-
-const CATEGORY_ICON: Record<string, (p: { className?: string }) => React.ReactElement> = {
-  milk: I.Milk,
-  drink: I.Drink,
-  snack: I.Snack,
-  bakery: I.Bakery,
-};
 
 export default function HomePage() {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [data, setData] = useState<HomeData | null>(null);
-  const [history, setHistory] = useState<History[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const loadHistory = useCallback(() => {
-    if (!auth.token) return setHistory([]);
-    api.get<{ items: History[] }>("/api/v1/users/me/search-history").then((r) => setHistory(r.items)).catch(() => {});
-  }, []);
-
   useEffect(() => {
     api.get<HomeData>("/api/v1/products/home").then(setData).catch(() => {});
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage(외부 저장소) 동기화
-    loadHistory();
-  }, [loadHistory]);
+  }, []);
 
-  // 입력하는 동안 이름에 검색어가 포함된 제품 상위 3개를 자동완성으로 보여준다.
-  // 매 키 입력마다 호출되므로 가벼운 /autocomplete(부분일치)를 쓴다. (의미 검색은 결과 페이지 담당)
   useEffect(() => {
     const keyword = q.trim();
     if (!keyword) {
       setSuggestions([]);
       return;
     }
+
     let cancelled = false;
     const timer = setTimeout(() => {
       api
         .get<{ items: Suggestion[] }>(`/api/v1/products/autocomplete?q=${encodeURIComponent(keyword)}&limit=3`)
-        // 늦게 도착한 이전 요청이 최신 결과를 덮어써 드롭다운이 깜빡이지 않도록 취소 가드
         .then((r) => {
           if (!cancelled) setSuggestions(r.items);
         })
@@ -58,6 +41,7 @@ export default function HomePage() {
           if (!cancelled) setSuggestions([]);
         });
     }, 200);
+
     return () => {
       cancelled = true;
       clearTimeout(timer);
@@ -65,164 +49,125 @@ export default function HomePage() {
   }, [q]);
 
   const search = (keyword: string) => {
-    if (!keyword.trim()) return;
+    const value = keyword.trim();
+    if (!value) return;
     setShowSuggestions(false);
-    router.push(`/search?q=${encodeURIComponent(keyword.trim())}`);
-  };
-
-  const goToProduct = (id: number) => {
-    setShowSuggestions(false);
-    router.push(`/products/${id}`);
-  };
-
-  const clearHistory = async () => {
-    await api.del("/api/v1/users/me/search-history").catch(() => {});
-    setHistory([]);
-  };
-
-  const removeHistory = async (id: number) => {
-    setHistory((h) => h.filter((x) => x.id !== id));
-    await api.del(`/api/v1/users/me/search-history/${id}`).catch(() => {});
+    router.push(`/search?q=${encodeURIComponent(value)}`);
   };
 
   return (
     <Screen>
-      <header className="px-5 pt-4 pb-1 flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <I.Logo className="w-6 h-6 text-brand" />
-          <span className="font-extrabold tracking-[0.06em] text-brand text-[17px]">FIRST LABEL</span>
+      <div className="px-5 pt-5">
+        <div className="flex justify-center pt-1">
+          <img src="/first-label-logo.webp" alt="FIRST LABEL" className="h-10 w-auto object-contain" />
         </div>
-        <Link href={auth.token ? "/mypage/notifications" : "/login"} aria-label="알림">
-          <I.Bell className="w-6 h-6 text-ink" />
-        </Link>
-      </header>
 
-      <div className="px-5 pt-4">
-        <h1 className="text-[26px] font-extrabold leading-[1.35] tracking-[-0.02em]">
-          더 건강한 선택을
-          <br />
-          도와드릴게요 🌿
-        </h1>
-
-        <div className="relative">
-          <div className="mt-5 flex items-center h-[56px] rounded-2xl border-[1.5px] border-brand px-5 gap-2">
-            <input
-              value={q}
-              onChange={(e) => {
-                const value = e.target.value;
-                setQ(value);
-                if (!value.trim()) setSuggestions([]);
-              }}
-              onKeyDown={(e) => e.key === "Enter" && search(q)}
-              onFocus={() => setShowSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
-              placeholder="제품명, 브랜드, 원재료를 검색해보세요"
-              className="flex-1 bg-transparent text-[15px] placeholder:text-[#b6bcc3]"
-            />
-            <button onClick={() => search(q)} aria-label="검색" className="text-ink">
-              <I.Search className="w-[22px] h-[22px]" />
-            </button>
+        <section className="mt-7 relative overflow-hidden rounded-[28px] bg-gradient-to-br from-white via-white to-mint-soft px-1 pb-1">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-mint px-3.5 py-2 text-[12.5px] font-semibold text-brand">
+            <I.Logo className="w-4 h-4" /> 유당 걱정일 때, 라벨부터 확인하세요!
           </div>
 
-          {showSuggestions && q.trim() && suggestions.length > 0 && (
-            <div className="absolute left-0 right-0 top-full mt-1.5 z-30 fl-card divide-y divide-line overflow-hidden">
-              {suggestions.map((p) => (
-                <button
-                  key={p.id}
-                  onMouseDown={() => goToProduct(p.id)}
-                  className="w-full flex items-center gap-3 px-4 h-[52px] text-left active:bg-mint-soft"
-                >
-                  <I.Search className="w-4 h-4 text-[#b6bcc3] shrink-0" />
-                  <span className="flex-1 min-w-0 truncate text-[14.5px]">{p.name}</span>
-                  <span className="text-[12.5px] text-sub shrink-0">{p.maker_name}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+          <div className="mt-5 pr-[126px] min-h-[180px] relative">
+            <h1 className="text-[32px] font-extrabold leading-[1.32] tracking-[-0.035em] text-ink">
+              이 제품, <span className="text-brand-light">유당</span>
+              <br />괜찮을까요?
+            </h1>
+            <p className="mt-5 text-[14px] leading-[1.75] text-ink/85">
+              제품을 검색하면 유당 관련 정보를
+              <br />쉽게 확인할 수 있어요.
+            </p>
 
-        <section className="mt-7">
-          <h2 className="font-bold text-[16px] mb-3">자주 찾는 카테고리</h2>
-          <div className="grid grid-cols-5 gap-2">
-            {(data?.categories ?? []).map((c) => {
-              const Icon = CATEGORY_ICON[c.icon] ?? I.Snack;
-              return (
-                <Link
-                  key={c.code}
-                  href={`/search?category=${encodeURIComponent(c.code)}`}
-                  className="aspect-square fl-card fl-card-tap flex flex-col items-center justify-center gap-1.5 active:bg-mint-soft"
-                >
-                  <Icon className="w-6 h-6 text-brand" />
-                  <span className="text-[11.5px] font-medium">{c.label}</span>
-                </Link>
-              );
-            })}
-            <Link
-              href="/search"
-              className="aspect-square fl-card fl-card-tap flex flex-col items-center justify-center gap-1.5 active:bg-mint-soft"
-            >
-              <I.Dots className="w-6 h-6 text-brand" />
-              <span className="text-[11.5px] font-medium">더보기</span>
-            </Link>
+            <div className="absolute right-0 top-2 w-[120px] h-[150px] flex items-center justify-center text-brand/60">
+              <div className="w-[82px] h-[112px] rounded-[18px] border-2 border-brand/20 bg-white relative">
+                <div className="absolute -top-4 left-3 right-3 h-5 rounded-t-md border-2 border-brand/20 bg-white" />
+                <span className="absolute inset-x-0 top-12 text-center text-[19px] font-extrabold text-[#6daee8]">MILK</span>
+              </div>
+              <div className="absolute right-0 bottom-6 w-[58px] h-[58px] rounded-full border-[8px] border-ink/80 bg-white flex items-center justify-center">
+                <I.Check className="w-7 h-7 text-brand-light" />
+                <span className="absolute w-9 h-2 rounded-full bg-ink/80 rotate-45 -right-7 -bottom-3" />
+              </div>
+            </div>
           </div>
         </section>
 
-        <section className="mt-7">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-bold text-[16px]">최근 검색</h2>
-            {history.length > 0 && (
-              <button onClick={clearHistory} className="text-[13px] font-semibold text-brand">
-                전체 삭제
-              </button>
+        <section className="mt-4">
+          <div className="relative">
+            <div className="h-[62px] rounded-2xl bg-white border border-line shadow-[0_8px_24px_rgba(17,24,39,0.08)] flex items-center px-4 gap-3">
+              <I.Search className="w-6 h-6 text-sub shrink-0" />
+              <input
+                value={q}
+                onChange={(e) => {
+                  setQ(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onKeyDown={(e) => e.key === "Enter" && search(q)}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
+                placeholder="궁금한 제품을 검색해보세요"
+                className="flex-1 min-w-0 bg-transparent text-[15px] placeholder:text-[#9299a4]"
+              />
+            </div>
+
+            {showSuggestions && q.trim() && suggestions.length > 0 && (
+              <div className="absolute z-30 left-0 right-0 top-full mt-2 fl-card divide-y divide-line overflow-hidden">
+                {suggestions.map((p) => (
+                  <button
+                    key={p.id}
+                    onMouseDown={() => router.push(`/products/${p.id}`)}
+                    className="w-full flex items-center gap-3 px-4 h-[52px] text-left active:bg-mint-soft"
+                  >
+                    <I.Search className="w-4 h-4 text-[#b6bcc3] shrink-0" />
+                    <span className="flex-1 min-w-0 truncate text-[14px]">{p.name}</span>
+                    <span className="text-[12px] text-sub shrink-0">{p.maker_name}</span>
+                  </button>
+                ))}
+              </div>
             )}
           </div>
-          {history.length === 0 ? (
-            <p className="text-[13.5px] text-sub py-3">
-              {auth.token ? "최근 검색 기록이 없어요." : "로그인하면 최근 검색을 저장해드려요."}
-            </p>
-          ) : (
-            <div className="fl-card divide-y divide-line">
-              {history.slice(0, 5).map((h) => (
-                <div key={h.id} className="flex items-center gap-3 px-4 h-[52px]">
-                  <I.Clock className="w-[18px] h-[18px] text-sub shrink-0" />
-                  <button onClick={() => search(h.keyword)} className="flex-1 text-left text-[14.5px] truncate">
-                    {h.keyword}
-                  </button>
-                  <button onClick={() => removeHistory(h.id)} aria-label="삭제" className="text-[#b6bcc3]">
-                    <I.Close className="w-[18px] h-[18px]" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+
+          <p className="mt-4 px-2 text-[13.5px] text-ink/75">찾는 제품이 없다면, 라벨을 찍어 바로 확인해보세요.</p>
+          <Link
+            href="/analysis"
+            className="mt-3 h-[52px] rounded-2xl border border-brand flex items-center justify-center gap-2 text-brand font-bold text-[15px] active:bg-mint-soft relative"
+          >
+            <I.Camera className="w-5 h-5" />
+            라벨 촬영하기
+            <I.Chevron className="w-4 h-4 absolute right-4" />
+          </Link>
         </section>
 
-        <section className="mt-7">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-[16px]">추천 제품</h2>
-            <Link href="/search" className="text-[13px] font-semibold text-brand flex items-center gap-0.5">
-              전체 보기 <I.Chevron className="w-3 h-3" />
+        <section className="mt-6 fl-card p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-extrabold text-[18px]">지금 많이 확인하는 제품</h2>
+            <Link href="/search" className="text-[13px] font-bold text-brand flex items-center gap-0.5">
+              더보기 <I.Chevron className="w-3.5 h-3.5" />
             </Link>
           </div>
+
           <div className="grid grid-cols-3 gap-2.5">
             {(data?.recommended ?? []).slice(0, 3).map((p) => (
-              <Link key={p.id} href={`/products/${p.id}`} className="fl-card fl-card-tap p-2.5">
-                <div className="h-[88px] flex items-center justify-center mb-2">
-                  <ProductThumb url={p.image_url} name={p.name} className="w-full h-[84px]" />
+              <Link key={p.id} href={`/products/${p.id}`} className="min-w-0">
+                <div className="h-[102px] flex items-center justify-center rounded-2xl bg-[#fbfcfb] border border-line/70 px-2">
+                  <ProductThumb url={p.image_url} name={p.name} className="w-full h-[86px]" />
                 </div>
-                <p className="text-[12.5px] font-semibold leading-[1.35] line-clamp-2 min-h-[34px]">{p.name}</p>
-                <div className="mt-1">
-                  <Stars rating={p.rating} count={p.rating_count} />
+                <div className="mt-2 min-h-[38px]">
+                  <p className="text-[12.5px] leading-[1.45] font-semibold line-clamp-2">{p.name}</p>
+                </div>
+                <div className="mt-1 flex items-center justify-between gap-1">
+                  <Stars rating={p.rating} count={0} />
+                  <span className={`text-[10.5px] font-bold px-2 py-1 rounded-full ${p.is_lactose_free ? "bg-safe-bg text-brand" : "bg-warn-bg text-warn"}`}>
+                    {p.is_lactose_free ? "안심" : "확인"}
+                  </span>
                 </div>
               </Link>
             ))}
           </div>
         </section>
 
-        <div className="h-6" />
+        <div className="h-7" />
       </div>
 
-      <BottomNav active="/" />
+      <ThreeTabNav active="/" />
     </Screen>
   );
 }

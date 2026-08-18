@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import * as I from "@/components/icons";
-import { BottomNav, Button, Modal, Screen } from "@/components/ui";
+import { Button, Modal, Screen } from "@/components/ui";
+import { ThreeTabNav } from "@/components/three-tab-nav";
 import { api, auth } from "@/lib/api";
 import { useRequireAuth } from "@/lib/useAuth";
 
@@ -18,8 +19,10 @@ type Me = {
 
 const MENU = [
   { href: "/mypage/profile", label: "내 정보 관리", Icon: I.Person },
-  { href: "/mypage/filters", label: "저장한 필터", Icon: I.Bookmark },
+  { href: "/register", label: "제품 등록", Icon: I.Plus },
   { href: "/mypage/registrations", label: "등록 요청 내역", Icon: I.Doc },
+  { href: "/mypage/favorites", label: "찜한 제품", Icon: I.Heart },
+  { href: "/mypage/filters", label: "저장한 필터", Icon: I.Bookmark },
   { href: "/mypage/inquiries", label: "문의 내역", Icon: I.Chat },
   { href: "/mypage/notifications", label: "알림 설정", Icon: I.Bell },
 ];
@@ -42,7 +45,7 @@ export default function MyPage() {
   return (
     <Screen>
       <header className="h-14 px-5 flex items-center justify-between border-b border-line/70">
-        <h1 className="font-bold text-[17px]">마이페이지</h1>
+        <h1 className="font-bold text-[17px]">마이</h1>
         <Link href="/mypage/notifications" aria-label="알림 설정">
           <I.Bell className="w-[22px] h-[22px]" />
         </Link>
@@ -77,8 +80,19 @@ export default function MyPage() {
           </div>
         </section>
 
+        <Link href="/register" className="mt-4 flex items-center gap-3 rounded-2xl bg-mint-soft border border-brand/15 p-4 active:bg-mint">
+          <div className="w-10 h-10 rounded-xl bg-brand text-white flex items-center justify-center shrink-0">
+            <I.Plus className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[15px] font-extrabold">제품 등록</p>
+            <p className="text-[12.5px] text-sub mt-0.5">새 제품을 등록하거나 검토를 요청할 수 있어요.</p>
+          </div>
+          <I.Chevron className="w-4 h-4 text-brand" />
+        </Link>
+
         <nav className="mt-4 fl-card divide-y divide-line">
-          {MENU.map(({ href, label, Icon }) => (
+          {MENU.filter((item) => item.href !== "/register").map(({ href, label, Icon }) => (
             <Link key={href} href={href} className="flex items-center gap-3 px-4 h-[56px] active:bg-mint-soft">
               <Icon className="w-[20px] h-[20px] text-sub" />
               <span className="flex-1 text-[15px]">{label}</span>
@@ -102,19 +116,16 @@ export default function MyPage() {
           <h2 className="mt-3.5 text-[18px] font-extrabold">로그아웃 하시겠어요?</h2>
           <p className="mt-1.5 text-[13.5px] text-sub leading-[1.5]">
             로그아웃하면 다시 로그인해야
-            <br />
-            서비스를 이용할 수 있습니다.
+            <br />서비스를 이용할 수 있습니다.
           </p>
           <div className="mt-5 space-y-2">
             <Button onClick={logout}>로그아웃</Button>
-            <Button onClick={() => setLogoutOpen(false)} variant="ghost">
-              취소
-            </Button>
+            <Button onClick={() => setLogoutOpen(false)} variant="ghost">취소</Button>
           </div>
         </div>
       </Modal>
 
-      <BottomNav active="/mypage" />
+      <ThreeTabNav active="/mypage" />
     </Screen>
   );
 }
