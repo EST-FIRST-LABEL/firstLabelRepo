@@ -31,8 +31,9 @@ RUN python -c "from paddleocr import PaddleOCR; PaddleOCR(use_angle_cls=True, la
 COPY --chown=user:user . .
 
 # HF Spaces 기본 포트
-EXPOSE 7860
+EXPOSE 8080
+
 
 # 컨테이너는 한 프로세스만 — NGINX 없이 uvicorn 단독으로 충분하다.
 # (HF/Railway 등이 HTTPS 종료와 라우팅을 대신 처리한다)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
