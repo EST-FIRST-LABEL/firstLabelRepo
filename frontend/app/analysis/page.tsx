@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 
 import * as I from "@/components/icons";
-import { AppHeader, BottomNav, Button, InfoBox, RISK, RiskChip, Screen, Spinner } from "@/components/ui";
+import { AppHeader, Button, ProductThumb, RISK, RiskChip, Screen, Spinner } from "@/components/ui";
+import { ThreeTabNav } from "@/components/three-tab-nav";
 import { api, type AnalysisResult } from "@/lib/api";
 
-/** 성분표 스캔 분석 (§13-6 ① POST /api/v1/scan) — FIRST CARD 재배치·하이라이트 데모 화면 */
 export default function AnalysisPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -35,6 +35,9 @@ export default function AnalysisPage() {
       form.append("user_filter", '["LACTOSE","GENERAL"]');
       const r = await api.post<{ data: AnalysisResult }>("/api/v1/scan", form);
       setResult(r.data);
+      if (r.data.product?.id && typeof window !== "undefined") {
+        localStorage.setItem("fl_last_product", String(r.data.product.id));
+      }
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -52,6 +55,9 @@ export default function AnalysisPage() {
         user_filter: ["LACTOSE", "GENERAL"],
       });
       setResult(r.data);
+      if (r.data.product?.id && typeof window !== "undefined") {
+        localStorage.setItem("fl_last_product", String(r.data.product.id));
+      }
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -59,17 +65,25 @@ export default function AnalysisPage() {
     }
   };
 
+  if (result) {
+    return (
+      <Screen>
+        <AppHeader title="분석 결과" />
+        <ScanResult result={result} />
+        <ThreeTabNav active="/" />
+      </Screen>
+    );
+  }
+
   return (
     <Screen>
-      <AppHeader title="성분표 분석" back={false} />
-
+      <AppHeader title="라벨 촬영" />
       <div className="px-5 pt-5">
-        <h1 className="text-[22px] font-extrabold leading-snug">
-          성분표를 찍으면
-          <br />
-          주의 성분부터 보여드려요
+        <h1 className="text-[23px] font-extrabold leading-snug">
+          라벨을 찍으면
+          <br />유당 관련 성분부터 확인해드려요
         </h1>
-        <p className="text-[14px] text-sub mt-2">사진 속 원재료명을 읽어 위험도 순으로 다시 정렬해드려요.</p>
+        <p className="text-[14px] text-sub mt-2">제품의 원재료 라벨이 잘 보이도록 촬영해주세요.</p>
 
         <input
           ref={fileRef}
@@ -82,23 +96,24 @@ export default function AnalysisPage() {
 
         <button
           onClick={() => fileRef.current?.click()}
-          className="mt-5 w-full rounded-2xl border-[1.5px] border-dashed border-line bg-[#fafbfc] py-8 flex flex-col items-center gap-2.5"
+          className="mt-5 w-full rounded-3xl border-[1.5px] border-dashed border-brand/30 bg-mint-soft py-8 flex flex-col items-center gap-2.5"
         >
           {preview ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={preview} alt="선택한 성분표" className="max-h-[220px] rounded-xl object-contain" />
+            <img src={preview} alt="선택한 성분표" className="max-h-[240px] rounded-2xl object-contain" />
           ) : (
             <>
-              <I.Camera className="w-10 h-10 text-brand/50" />
-              <span className="text-[14px] font-semibold text-sub">성분표 사진 선택 / 촬영</span>
+              <div className="w-14 h-14 rounded-2xl bg-white border border-brand/15 flex items-center justify-center text-brand">
+                <I.Camera className="w-8 h-8" />
+              </div>
+              <span className="text-[15px] font-bold text-brand">성분표 촬영하기</span>
+              <span className="text-[12.5px] text-sub">또는 갤러리에서 사진 선택</span>
             </>
           )}
         </button>
 
         <div className="mt-3">
-          <Button onClick={runScan} disabled={!file} loading={loading}>
-            OCR 분석 시작
-          </Button>
+          <Button onClick={runScan} disabled={!file} loading={loading}>사진 분석하기</Button>
         </div>
 
         <details className="mt-4 fl-card p-4">
@@ -107,104 +122,99 @@ export default function AnalysisPage() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={3}
-            placeholder="원유(국산), 정제수, 기타설탕, 탈지분유, 농축유청단백(WPC)"
+            placeholder="원유(국산), 정제수, 탈지분유, 농축유청단백(WPC)"
             className="mt-3 w-full rounded-xl border border-line p-3 text-[14px] resize-none"
           />
-          <button
-            onClick={runText}
-            className="mt-2 w-full h-[44px] rounded-xl bg-mint text-brand font-bold text-[14px]"
-          >
-            텍스트로 분석
-          </button>
+          <button onClick={runText} className="mt-2 w-full h-[44px] rounded-xl bg-mint text-brand font-bold text-[14px]">텍스트로 분석</button>
         </details>
 
-        {error && (
-          <p className="mt-4 rounded-2xl bg-danger-bg text-danger text-[13.5px] p-4 leading-[1.55]">{error}</p>
-        )}
-
+        {error && <p className="mt-4 rounded-2xl bg-danger-bg text-danger text-[13.5px] p-4 leading-[1.55]">{error}</p>}
         {loading && (
           <div className="py-10 flex flex-col items-center gap-3 text-brand">
             <Spinner className="w-7 h-7" />
-            <p className="text-[13.5px] text-sub">성분표를 읽고 있어요…</p>
+            <p className="text-[13.5px] text-sub">라벨을 읽고 있어요…</p>
           </div>
         )}
-
-        {result && <ScanResult result={result} />}
-
         <div className="h-6" />
       </div>
-
-      <BottomNav active="/analysis" />
+      <ThreeTabNav active="/" />
     </Screen>
   );
 }
 
 export function ScanResult({ result }: { result: AnalysisResult }) {
+  const product = result.product;
+
   return (
-    <div className="mt-6 space-y-3">
-      {/* FIRST CARD — 최상단 재배치된 주의 성분 */}
-      {result.has_warning ? (
-        <section className="rounded-2xl border-[1.5px] border-danger/25 bg-danger-bg/40 p-4">
-          <p className="flex items-center gap-2 font-extrabold text-[16px] text-danger mb-3">
-            <I.Alert className="w-[22px] h-[22px]" /> 주의 성분 {result.warning_count}건을 찾았어요
-          </p>
-          <div className="space-y-2">
-            {result.first_card.map((c) => (
-              <div key={c.ingredient_name} className="rounded-xl bg-white p-3">
-                <p className="flex items-center gap-2 flex-wrap">
-                  <b className="text-[15px]">{c.ingredient_name}</b>
-                  <RiskChip level={c.risk_level} />
-                </p>
-                <p className="text-[13px] text-sub mt-1 leading-[1.5]">{c.description}</p>
-              </div>
-            ))}
+    <div className="px-5 pt-5 pb-6 space-y-4">
+      {product && (
+        <section className="fl-card p-4 flex items-center gap-4">
+          <ProductThumb url={product.image_url} name={product.name} className="w-[72px] h-[88px]" />
+          <div className="min-w-0">
+            <h2 className="text-[20px] font-extrabold leading-snug line-clamp-2">{product.name}</h2>
+            <p className="text-[13.5px] text-sub mt-1">{product.maker_name}</p>
+            {product.volume && <p className="text-[13.5px] text-sub">{product.volume}</p>}
           </div>
-        </section>
-      ) : (
-        <section className="rounded-2xl bg-safe-bg p-4 flex items-center gap-2.5">
-          <I.Check className="w-6 h-6 text-brand" />
-          <p className="font-bold text-[15px] text-brand">유당 관련 주의 성분이 발견되지 않았어요</p>
         </section>
       )}
 
-      {/* 재구성된 원재료 리스트 */}
+      <section className={`rounded-3xl border p-5 ${result.has_warning ? "border-warn bg-warn-bg/35" : "border-brand/20 bg-safe-bg"}`}>
+        <div className="flex items-start gap-3">
+          {result.has_warning ? (
+            <I.Alert className="w-9 h-9 text-warn shrink-0" />
+          ) : (
+            <div className="w-9 h-9 rounded-full bg-brand text-white flex items-center justify-center shrink-0"><I.Check className="w-5 h-5" /></div>
+          )}
+          <div>
+            <h2 className={`text-[22px] font-extrabold ${result.has_warning ? "text-warn" : "text-brand"}`}>
+              {result.has_warning ? "유당이 있을 수 있어요" : "유당 관련 주의 성분이 없어요"}
+            </h2>
+            <p className="mt-2 text-[14px] leading-[1.65] text-ink/85">
+              {result.has_warning
+                ? "유당이 남아 있을 가능성이 있는 원재료가 확인됐어요. 민감한 경우 섭취에 주의하세요."
+                : "현재 라벨에서는 유당 관련 주의 성분이 확인되지 않았어요."}
+            </p>
+            <p className="mt-3 text-[12.5px] text-sub">주의 원료 {result.warning_count}개 · 전체 원료 {result.counts.total}개</p>
+          </div>
+        </div>
+      </section>
+
       <section className="fl-card p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold text-[15px]">추출된 성분</h3>
-          <span className="text-[12px] text-sub">주의 성분 우선 정렬</span>
-        </div>
-        <div className="rounded-xl border border-line divide-y divide-line">
-          {result.all_ingredients.map((ing) => (
-            <div key={ing.name} className="flex items-center gap-2.5 px-3.5 h-[52px]">
-              <span className={`w-[14px] h-[14px] rounded-full shrink-0 ${RISK[ing.risk_level].dot}`} />
-              <span className={`text-[14.5px] flex-1 truncate ${ing.is_highlight ? "font-bold" : ""}`}>{ing.name}</span>
-              {ing.is_highlight && <RiskChip level={ing.risk_level} />}
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-[13px] text-sub">종합 점수</span>
-          <span className="text-[15px] font-extrabold text-brand">
-            {result.score}
-            <span className="text-[12px] text-sub">/100 · {result.score_label}</span>
-          </span>
-        </div>
+        <h3 className="font-extrabold text-[19px] mb-2">주의가 필요한 원재료</h3>
+        {result.first_card.length === 0 ? (
+          <div className="py-6 text-center text-[13.5px] text-sub">주의가 필요한 원재료가 없어요.</div>
+        ) : (
+          <div className="divide-y divide-line">
+            {result.first_card.map((c) => (
+              <div key={c.ingredient_name} className="py-4 first:pt-2 last:pb-1 flex gap-3">
+                <span className={`mt-1 w-7 h-7 rounded-full flex items-center justify-center text-white shrink-0 ${RISK[c.risk_level].dot}`}>
+                  <span className="text-[14px] font-extrabold">!</span>
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <b className="text-[16px]">{c.ingredient_name}</b>
+                    <RiskChip level={c.risk_level} />
+                  </div>
+                  <p className="text-[13.5px] text-sub mt-1.5 leading-[1.6]">{c.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {result.ai_comment && (
         <section className="rounded-2xl bg-mint-soft p-4">
-          <p className="flex items-center gap-1.5 font-bold text-[14.5px] text-brand mb-1.5">
-            <I.Bot className="w-[18px] h-[18px]" /> AI 코멘트
-          </p>
+          <p className="font-bold text-[14.5px] text-brand mb-1.5">AI 분석 코멘트</p>
           <p className="text-[13.5px] leading-[1.6] text-ink/80">{result.ai_comment}</p>
         </section>
       )}
 
-      <InfoBox>성분표를 OCR로 분석했어요. 등록 요청을 하면 검증 후 제품 DB에 반영됩니다.</InfoBox>
-
-      <Link href="/register" className="block">
-        <Button variant="outline">이 제품 등록 요청하기</Button>
-      </Link>
+      {product?.id && (
+        <Link href={`/recommend/${product.id}`} className="block">
+          <Button>대체 제품 추천받기</Button>
+        </Link>
+      )}
     </div>
   );
 }
