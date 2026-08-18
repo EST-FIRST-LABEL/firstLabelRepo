@@ -51,9 +51,12 @@ export default function LoginPage() {
   return (
     <Screen nav={false}>
       <div className="px-7 pt-16 pb-10">
-        <div className="flex items-center gap-2 justify-center">
-          <I.Logo className="w-7 h-7 text-brand" />
-          <span className="font-extrabold tracking-[0.06em] text-brand text-[19px]">FIRST LABEL</span>
+        <div className="flex items-center justify-center">
+          <img
+            src="/first-label-logo-tight.png"
+            alt="FIRST LABEL"
+            className="h-10 w-auto object-contain"
+          />
         </div>
 
         <h1 className="mt-12 text-[28px] font-extrabold">로그인</h1>
