@@ -37,8 +37,8 @@ BigId = BigInteger().with_variant(Integer, "sqlite")
 # ERD 표기대로 timestamptz + DEFAULT CURRENT_TIMESTAMP
 TS = DateTime(timezone=True)
 
-# 임베딩 차원 (OpenAI text-embedding-3-small 기준). 모델을 바꾸면 이 값도 바꿀 것.
-EMBEDDING_DIM = 1536
+# 임베딩 차원. Supabase Edge Function의 gte-small 기준(384). 모델을 바꾸면 이 값도 바꿀 것.
+EMBEDDING_DIM = 384
 
 
 class User(Base):
@@ -94,8 +94,8 @@ class ProductEmbedding(Base):
         BigId, ForeignKey("products.product_id", ondelete="CASCADE"), index=True
     )
     # 어떤 텍스트를 임베딩했는지: "raw_ingredients" | "name" | "name_ingredients"
-    source: Mapped[str] = mapped_column(String(30), default="raw_ingredients")
-    model: Mapped[str] = mapped_column(String(60), default="text-embedding-3-small")
+    source: Mapped[str] = mapped_column(String(30), default="name_ingredients")
+    model: Mapped[str] = mapped_column(String(60), default="gte-small")
     dim: Mapped[int] = mapped_column(Integer, default=EMBEDDING_DIM)
     embedding: Mapped[list[float]] = mapped_column(Vector(EMBEDDING_DIM).with_variant(Text, "sqlite"))
     created_at: Mapped[datetime] = mapped_column(TS, default=now, server_default=func.now())
