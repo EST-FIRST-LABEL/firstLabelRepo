@@ -66,7 +66,7 @@ export default function HomePage() {
       <div className="px-5 pt-3">
         <div className="flex justify-center py-1">
           <img
-            src="/first-label-logo-tight.webp"
+            src="/first-label-logo-tight.png"
             alt="FIRST LABEL"
             className="block w-[250px] h-[58px] object-contain"
           />
@@ -79,8 +79,8 @@ export default function HomePage() {
 
           <div className="mt-5 pr-[126px] min-h-[180px] relative">
             <h1 className="text-[32px] font-extrabold leading-[1.32] tracking-[-0.035em] text-ink">
-              이 제품, <span className="text-brand-light">유당</span>
-              <br />괜찮을까요?
+              복잡한 정보에,
+              <br />명확한 <span className="text-brand-light">기준을</span>
             </h1>
             <p className="mt-5 text-[14px] leading-[1.75] text-ink/85">
               제품을 검색하면 유당 관련 정보를
