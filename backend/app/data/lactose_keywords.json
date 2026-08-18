@@ -3,7 +3,8 @@
     {
       "group_code": "LACTOSE",
       "group_name": "유당불내증 필터",
-      "safe_signals": ["락타아제", "유당분해", "유당을분해", "무유당", "락토프리", "lactosefree", "lactose free"],
+      "safe_signals": ["무유당", "락토프리", "lactosefree", "lactose free"],
+      "context_safe_signals": ["락타아제", "유당분해", "유당을분해"],
       "keywords": [
         { "keyword": "유당", "aliases": ["락토오스", "락토스", "lactose"], "risk_level": "DANGER", "description": "우유에 들어 있는 당분. 유당불내증이 있으면 복통·설사·복부 팽만감을 유발할 수 있어요." },
         { "keyword": "탈지분유", "aliases": ["말지분유", "탈지 분유"], "risk_level": "DANGER", "description": "우유에서 지방을 제거하고 건조한 분말이에요. 유당이 그대로 남아 있어요." },

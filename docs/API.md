@@ -78,7 +78,7 @@ Swagger: `/docs`
 | GET | `/api/v1/registrations/me?status=` | 내 요청 (최대 30건) |
 | GET | `/api/v1/registrations/{id}` | 상세 |
 | POST | `/api/v1/registrations/{id}/cancel` | 요청 취소 |
-| POST | `/api/v1/registrations/{id}/approve` | 검토 승인 → `products` 반영 (운영 화면 대체용) |
+| POST | `/api/v1/registrations/{id}/approve` | 검토 승인 → `products` 반영 (운영 화면 대체용, `ADMIN_LOGIN_IDS`에 등록된 계정만 403 없이 호출 가능) |
 
 대표 이미지(§9 B안): 접수 시 Alan AI에 제품명으로 이미지 URL을 물어보고, HEAD 검증에 통과하면 `image_source="ai_search"`, 실패하면 업로드 사진으로 `"user_upload"` fallback.
 
