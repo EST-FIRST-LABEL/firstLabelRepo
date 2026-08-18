@@ -5,18 +5,8 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import * as I from "@/components/icons";
-import {
-  AppHeader,
-  BottomNav,
-  ProductThumb,
-  RISK,
-  RiskChip,
-  Screen,
-  Sheet,
-  Spinner,
-  Toast,
-  useToast,
-} from "@/components/ui";
+import { AppHeader, ProductThumb, RiskChip, Screen, Sheet, Spinner, Toast, useToast } from "@/components/ui";
+import { ThreeTabNav } from "@/components/three-tab-nav";
 import { api, type AnalysisResult, type Ingredient, type RiskLevel } from "@/lib/api";
 
 export default function ProductAnalysisPage() {
@@ -25,14 +15,13 @@ export default function ProductAnalysisPage() {
   const [data, setData] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<Ingredient | null>(null);
-  const [filter, setFilter] = useState<"ALL" | "SAFE" | "WARN" | "DANGER">("ALL");
 
   useEffect(() => {
     api
       .get<AnalysisResult>(`/api/v1/products/${id}/analysis`)
       .then((r) => {
         setData(r);
-        localStorage.setItem("fl_last_product", String(id)); // 추천 탭 진입점에서 사용
+        localStorage.setItem("fl_last_product", String(id));
       })
       .catch((e) => setError(e.message));
   }, [id]);
@@ -47,45 +36,30 @@ export default function ProductAnalysisPage() {
     }
   };
 
-  if (error)
+  if (error) {
     return (
       <Screen nav={false}>
         <AppHeader title="분석 결과" />
         <div className="p-10 text-center text-sub">{error}</div>
       </Screen>
     );
+  }
 
-  if (!data)
+  if (!data) {
     return (
       <Screen>
         <AppHeader title="분석 결과" />
         <div className="py-24 flex justify-center text-brand">
           <Spinner className="w-7 h-7" />
         </div>
-        <BottomNav active="/analysis" />
+        <ThreeTabNav active="/" />
       </Screen>
     );
+  }
 
-  const p = data.product!;
-  // 시안의 요약 칩 4종. '주의'는 WARNING + CAUTION 을 합쳐서 센다.
-  const summary = [
-    { key: "ALL" as const, label: "전체", n: data.counts.total, cls: "bg-[#f4f5f7] text-sub" },
-    { key: "SAFE" as const, label: "안심", n: data.counts.safe, cls: "bg-safe-bg text-brand" },
-    {
-      key: "WARN" as const,
-      label: "주의",
-      n: data.counts.warning + data.counts.caution,
-      cls: "bg-warn-bg text-warn",
-    },
-    { key: "DANGER" as const, label: "주의 필요", n: data.counts.danger, cls: "bg-danger-bg text-danger" },
-  ];
-  const MATCH: Record<string, RiskLevel[]> = {
-    SAFE: ["SAFE"],
-    WARN: ["WARNING", "CAUTION"],
-    DANGER: ["DANGER"],
-  };
-  const listed =
-    filter === "ALL" ? data.all_ingredients : data.all_ingredients.filter((i) => MATCH[filter].includes(i.risk_level));
+  const product = data.product;
+  const warnings = data.first_card;
+  const firstWarningName = warnings[0]?.ingredient_name ?? "유당 관련 원재료";
 
   return (
     <Screen>
@@ -98,125 +72,110 @@ export default function ProductAnalysisPage() {
         }
       />
 
-      <div className="px-5 pt-4 space-y-3">
-        {/* 제품 + 종합 점수 */}
-        <section className="fl-card p-4 flex items-center gap-3.5">
-          <ProductThumb url={p.image_url} name={p.name} className="w-[54px] h-[64px]" />
-          <div className="flex-1 min-w-0">
-            <h2 className="font-extrabold text-[17px] leading-snug line-clamp-2">{p.name}</h2>
-            <p className="text-[13px] text-sub mt-0.5">{p.maker_name}</p>
-            <p className="text-[13px] text-sub">{p.volume}</p>
-          </div>
-          <div className="w-[76px] shrink-0 rounded-2xl bg-mint-soft py-2.5 text-center">
-            <p className="text-[11px] text-sub">종합 점수</p>
-            <p className="text-[26px] font-extrabold text-brand leading-tight">
-              {data.score}
-              <span className="text-[12px] text-sub font-bold">/100</span>
-            </p>
-            <p className="text-[12px] font-bold text-brand">{data.score_label}</p>
-          </div>
-        </section>
-
-        {/* 원재료 분석 요약 */}
-        <section className="fl-card p-4">
-          <h3 className="font-bold text-[15px] mb-3">원재료 분석 요약</h3>
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-            {summary.map((s) => (
-              <button
-                key={s.key}
-                onClick={() => setFilter(s.key)}
-                className={`shrink-0 flex items-center gap-1.5 text-[12.5px] font-bold px-3 py-2 rounded-full ${s.cls} ${
-                  filter === s.key ? "ring-2 ring-brand/30" : ""
-                }`}
-              >
-                {s.label} <span className="font-extrabold">{s.n}</span>
-                <I.Chevron className="w-2.5 h-2.5 opacity-60" />
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* 주의가 필요한 원재료 */}
-        <section className="fl-card p-4">
-          <h3 className="font-bold text-[15px] mb-1">주의가 필요한 원재료</h3>
-          {data.first_card.length === 0 ? (
-            <p className="text-[13.5px] text-sub py-4">주의가 필요한 원재료가 발견되지 않았어요. 🌿</p>
-          ) : (
-            <div className="divide-y divide-line">
-              {data.first_card.map((c) => (
-                <button
-                  key={c.ingredient_name}
-                  onClick={() =>
-                    setSelected({
-                      name: c.ingredient_name,
-                      risk_level: c.risk_level,
-                      matched_keyword: c.matched_keyword,
-                      description: c.description,
-                      is_highlight: true,
-                    })
-                  }
-                  className="w-full flex items-start gap-2.5 py-3.5 text-left"
-                >
-                  <I.Alert className={`w-[22px] h-[22px] shrink-0 mt-0.5 ${RISK[c.risk_level].text}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="flex items-center gap-2 flex-wrap">
-                      <b className="text-[15px]">{c.ingredient_name}</b>
-                      <RiskChip level={c.risk_level} />
-                    </p>
-                    <p className="text-[13px] text-sub mt-1 leading-[1.5] line-clamp-2">{c.description}</p>
-                  </div>
-                  <I.Chevron className="w-4 h-4 text-[#c3c9cf] shrink-0 mt-1" />
-                </button>
-              ))}
+      <div className="px-4 pt-4 pb-8 space-y-4">
+        <section className="rounded-[24px] bg-white border border-line/70 shadow-[0_10px_30px_rgba(17,24,39,0.06)] p-4">
+          {product && (
+            <div className="flex items-center gap-4 px-1 pb-5">
+              <div className="w-[72px] h-[88px] rounded-[18px] bg-[#f5fbf7] border border-brand/10 flex items-center justify-center shrink-0 overflow-hidden">
+                <ProductThumb url={product.image_url} name={product.name} className="w-[56px] h-[72px]" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-[20px] font-extrabold leading-snug line-clamp-2 text-ink">{product.name}</h2>
+                <p className="text-[13.5px] text-sub mt-1">{product.maker_name}</p>
+                {product.volume && <p className="text-[13.5px] text-sub mt-0.5">{product.volume}</p>}
+              </div>
             </div>
           )}
 
-          {/* 원재료 전체 목록 (재배치된 순서) */}
-          <div className="mt-2 pt-4 border-t border-line">
-            <div className="flex items-center justify-between mb-2.5">
-              <h3 className="font-bold text-[15px]">원재료 전체 목록</h3>
-              <button
-                onClick={() => setFilter("ALL")}
-                className="text-[12.5px] font-semibold text-brand flex items-center gap-0.5"
-              >
-                상세 보기 <I.Chevron className="w-3 h-3" />
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {listed.map((ing) => (
-                <button
-                  key={ing.name}
-                  onClick={() => setSelected(ing)}
-                  className={`text-[12.5px] font-semibold px-3 py-1.5 rounded-full ${RISK[ing.risk_level].chip}`}
-                >
-                  {ing.name}
-                </button>
-              ))}
+          <div className={`rounded-[22px] border px-4 py-5 ${data.has_warning ? "border-[#ff6200] bg-[#fffaf6]" : "border-brand/30 bg-safe-bg"}`}>
+            <div className="flex items-start gap-3.5">
+              {data.has_warning ? (
+                <div className="w-10 h-10 rounded-full bg-[#ff5a00] text-white flex items-center justify-center shrink-0 text-[22px] font-bold">!</div>
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-brand text-white flex items-center justify-center shrink-0">
+                  <I.Check className="w-6 h-6" />
+                </div>
+              )}
+
+              <div className="min-w-0 flex-1">
+                <h2 className={`text-[22px] font-extrabold leading-tight ${data.has_warning ? "text-[#f05a00]" : "text-brand"}`}>
+                  {data.has_warning ? "유당이 있을 수 있어요" : "유당 관련 주의 성분이 없어요"}
+                </h2>
+                <p className="mt-3 text-[14px] leading-[1.7] text-ink/85">
+                  {data.has_warning
+                    ? `${firstWarningName}이 포함되어 유당이 남아 있을 가능성이 있어요. 민감한 경우 섭취에 주의하세요.`
+                    : "현재 원재료에서는 유당 관련 주의 성분이 확인되지 않았어요."}
+                </p>
+                <p className="mt-4 text-[12.5px] text-sub">
+                  주의 원료 {data.warning_count}개 · 전체 원료 {data.counts.total}개
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* AI 코멘트 */}
-        {data.ai_comment && (
-          <section className="rounded-2xl bg-mint-soft p-4">
-            <p className="flex items-center gap-1.5 font-bold text-[14.5px] text-brand mb-1.5">
-              <I.Bot className="w-[18px] h-[18px]" /> AI 코멘트
-            </p>
-            <p className="text-[13.5px] leading-[1.6] text-ink/80 whitespace-pre-line">{data.ai_comment}</p>
-          </section>
-        )}
+        <section className="rounded-[24px] bg-white border border-line/70 shadow-[0_10px_30px_rgba(17,24,39,0.06)] px-4 py-5">
+          <h3 className="font-extrabold text-[20px] mb-2">주의가 필요한 원재료</h3>
 
-        <div className="h-1" />
+          {warnings.length === 0 ? (
+            <div className="py-8 text-center text-[13.5px] text-sub">주의가 필요한 원재료가 없어요.</div>
+          ) : (
+            <div className="divide-y divide-line/80">
+              {warnings.map((item) => {
+                const isHigh = item.risk_level === "DANGER" || item.risk_level === "WARNING";
+                const badgeText = isHigh ? "주의 필요" : "주의";
+                const badgeClass = isHigh ? "bg-[#fff0f0] text-[#ff3434]" : "bg-[#fff3e8] text-[#ff6a00]";
+                const iconClass = isHigh ? "bg-[#ff3f3f]" : "bg-[#ff6a00]";
+
+                return (
+                  <button
+                    key={`${item.ingredient_name}-${item.matched_keyword ?? ""}`}
+                    onClick={() =>
+                      setSelected({
+                        name: item.ingredient_name,
+                        risk_level: item.risk_level,
+                        matched_keyword: item.matched_keyword,
+                        description: item.description,
+                        is_highlight: true,
+                      })
+                    }
+                    className="w-full py-4 first:pt-3 last:pb-1 text-left"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className={`mt-0.5 w-7 h-7 rounded-full ${iconClass} text-white flex items-center justify-center shrink-0 font-extrabold`}>!</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <b className="text-[17px] leading-snug text-ink">{item.ingredient_name}</b>
+                          <span className={`text-[12px] font-semibold px-2.5 py-1 rounded-full ${badgeClass}`}>{badgeText}</span>
+                        </div>
+                        <p className="text-[13.5px] text-sub mt-2 leading-[1.65]">{item.description}</p>
+                      </div>
+                      <I.Chevron className="w-5 h-5 text-[#adb5bd] mt-1 shrink-0" />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {product?.id && (
+          <Link
+            href={`/recommend/${product.id}`}
+            className="block h-[50px] rounded-2xl border border-brand text-brand font-bold text-[14px] flex items-center justify-center active:bg-mint-soft"
+          >
+            대체 제품 추천받기
+          </Link>
+        )}
       </div>
 
       <IngredientSheet ingredient={selected} onClose={() => setSelected(null)} />
       <Toast message={toast.message} />
-      <BottomNav active="/analysis" />
+      <ThreeTabNav active="/" />
     </Screen>
   );
 }
 
-/* 성분 상세 설명 화면 (§2-3) */
 function IngredientSheet({ ingredient, onClose }: { ingredient: Ingredient | null; onClose: () => void }) {
   const CRITERIA: Record<RiskLevel, string> = {
     DANGER: "유당이 직접 포함된 원료로 분류돼요.",
