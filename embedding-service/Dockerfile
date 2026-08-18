@@ -22,5 +22,6 @@ RUN python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='se
 
 COPY --chown=user:user . .
 
+# Cloud Run 등은 컨테이너가 $PORT(기본 8080)로 리슨하길 요구한다. 미설정(로컬/HF)이면 7860.
 EXPOSE 7860
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-7860}"]
