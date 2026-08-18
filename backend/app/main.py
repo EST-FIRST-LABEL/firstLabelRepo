@@ -32,10 +32,21 @@ app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads"
 
 @app.on_event("startup")
 def on_startup() -> None:
-    # 서버리스/Cloud Run은 콜드스타트마다 실행되므로 스키마 생성은 건너뛴다.
-    # (배포 전 로컬/스크립트에서 한 번만 만들면 된다)
-    if not IS_SERVERLESS and not IS_CLOUD_RUN:
-        init_db()
+    # Vercel/Lambda(서버리스)는 요청마다 콜드스타트라 스키마 생성을 건너뛴다.
+    # (원격 Postgres 를 배포 전 스크립트로 한 번만 만들어 두는 것을 전제로 한다)
+    if IS_SERVERLESS:
+        return
+    # 로컬/Cloud Run: 스키마 생성 후 카탈로그가 비어 있으면 데모(목업) 데이터를 시드한다.
+    # Cloud Run 은 /tmp 의 임시 SQLite 라 콜드스타트마다 재생성되지만 seed_if_empty 가 idempotent 하다.
+    init_db()
+    from app.core.db import SessionLocal
+    from app.core.seed import seed_if_empty
+
+    db = SessionLocal()
+    try:
+        seed_if_empty(db)
+    finally:
+        db.close()
 
 
 @app.get("/api/v1/health")

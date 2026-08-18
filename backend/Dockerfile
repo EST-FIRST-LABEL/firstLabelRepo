@@ -20,13 +20,16 @@ RUN useradd -m -u 1000 user
 USER user
 WORKDIR /home/user/app
 
-COPY --chown=user:user requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir "numpy<2" paddlepaddle==2.6.2 paddleocr==2.9.1
+# pip이 비루트(user) 설치 시 콘솔 스크립트를 ~/.local/bin 에 넣는데 기본 PATH에 없다.
+ENV PATH=/home/user/.local/bin:$PATH
 
-# 한글 OCR 모델을 이미지에 미리 구워둔다.
-# 이 단계가 없으면 컨테이너가 재시작될 때마다 첫 요청이 30~60초 걸린다.
-RUN python -c "from paddleocr import PaddleOCR; PaddleOCR(use_angle_cls=True, lang='korean', show_log=False)"
+COPY --chown=user:user requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# NOTE: PaddleOCR(paddlepaddle/paddleocr)는 이미지에 넣지 않는다.
+# Cloud Run 빌드에서 모델 초기화가 네이티브 크래시(free(): invalid pointer, exit 134)로 실패했고,
+# 앱은 OCR 없이도 동작한다(app/services/ocr.py: lazy import → 미설치 시 /api/v1/scan 만 503).
+# 이미지 OCR이 필요하면 GOOGLE_VISION_API_KEY 를 설정하면 무거운 의존성 없이 활성화된다.
 
 COPY --chown=user:user . .
 
@@ -36,4 +39,4 @@ EXPOSE 8080
 
 # 컨테이너는 한 프로세스만 — NGINX 없이 uvicorn 단독으로 충분하다.
 # (HF/Railway 등이 HTTPS 종료와 라우팅을 대신 처리한다)
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
+CMD ["sh", "-c", "python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

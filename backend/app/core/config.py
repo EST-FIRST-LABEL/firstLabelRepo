@@ -10,8 +10,9 @@ load_dotenv(BASE_DIR / ".env")
 IS_CLOUD_RUN = bool(os.getenv("K_SERVICE"))
 
 # 서버리스(Vercel/Lambda)는 파일시스템이 읽기 전용이고 /tmp 만 쓸 수 있다.
+# Cloud Run 도 마찬가지로 /tmp 외에는 쓸 수 없다(그 외 경로는 read-only → mkdir 시 PermissionError).
 IS_SERVERLESS = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
-WRITABLE_DIR = Path("/tmp") if IS_SERVERLESS else BASE_DIR
+WRITABLE_DIR = Path("/tmp") if (IS_SERVERLESS or IS_CLOUD_RUN) else BASE_DIR
 
 
 def _csv(name: str) -> list[str]:

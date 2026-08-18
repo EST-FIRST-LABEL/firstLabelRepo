@@ -23,10 +23,9 @@ router = APIRouter(prefix="/api/v1/products", tags=["products"])
 
 
 def _catalog_stmt():
-    return select(Product).where(
-        Product.report_no.is_not(None),
-        Product.image_source == "haccp_csv",
-    )
+    # 데모(목업) 카탈로그와 HACCP 실데이터를 모두 노출한다.
+    # (HACCP 전용 필터는 실데이터가 채워진 환경에서만 의미가 있어 완화했다)
+    return select(Product)
 
 
 def card(p: Product, is_wished: bool = False) -> dict:
@@ -142,19 +141,14 @@ def home(db: Session = Depends(get_db), user: User | None = Depends(optional_use
     items = list(
         db.scalars(
             _catalog_stmt()
-            .where(Product.image_url != "")
-            .order_by(Product.wishlist_count.desc(), Product.id.asc())
+            .order_by(Product.wishlist_count.desc(), Product.rating.desc(), Product.id.asc())
             .limit(6)
         )
     )
     wished = _wished_ids(db, user, [p.id for p in items])
     category_rows = db.execute(
         select(Product.category, func.count(Product.id).label("product_count"))
-        .where(
-            Product.report_no.is_not(None),
-            Product.image_source == "haccp_csv",
-            Product.category != "",
-        )
+        .where(Product.category != "")
         .group_by(Product.category)
         .order_by(func.count(Product.id).desc(), Product.category)
         .limit(5)
