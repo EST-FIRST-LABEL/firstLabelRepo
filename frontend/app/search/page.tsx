@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
 import * as I from "@/components/icons";
-import { BottomNav, Button, ProductThumb, Screen, Spinner, Stars } from "@/components/ui";
+import { Button, ProductThumb, Screen, Spinner, Stars } from "@/components/ui";
+import { ThreeTabNav } from "@/components/three-tab-nav";
 import { api, type Product } from "@/lib/api";
 
 function SearchInner() {
@@ -127,7 +128,7 @@ function SearchInner() {
         <div className="h-6" />
       </div>
 
-      <BottomNav active="/" />
+      <ThreeTabNav active="/" />
     </Screen>
   );
 }
