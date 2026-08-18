@@ -24,7 +24,6 @@ export default function RecommendPage() {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<Data | null>(null);
   const [tab, setTab] = useState<TabKey>("similar");
-  const [showReason, setShowReason] = useState(true);
   const toast = useToast();
 
   useEffect(() => {
@@ -48,14 +47,7 @@ export default function RecommendPage() {
 
   return (
     <Screen>
-      <AppHeader
-        title="AI 추천 대체 제품"
-        right={
-          <button onClick={() => setShowReason((v) => !v)} aria-label="추천 이유 표시 설정">
-            <I.Sliders className="w-[22px] h-[22px]" />
-          </button>
-        }
-      />
+      <AppHeader title="AI 추천 대체 제품" />
 
       <div className="px-5 pt-4">
         <div className="grid grid-cols-3 gap-2.5">
@@ -72,23 +64,9 @@ export default function RecommendPage() {
           ))}
         </div>
 
-        <section className="mt-5 rounded-[22px] bg-gradient-to-r from-[#f2fbf5] to-[#eef9f2] px-5 py-5 flex items-center justify-between">
-          <p className="text-[16px] font-bold leading-[1.65] text-ink">
-            분석 결과를 기반으로
-            <br />더 나은 제품을 추천드려요
-          </p>
-          <I.Logo className="w-9 h-9 text-[#59c878]" />
-        </section>
-
         <section className="mt-6 pb-2">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4">
             <h2 className="text-[20px] font-extrabold tracking-[-0.02em]">{title}</h2>
-            <button
-              onClick={() => setShowReason((v) => !v)}
-              className="rounded-full bg-[#eff9f2] px-3.5 py-2 text-[12.5px] font-bold text-brand"
-            >
-              추천 이유 {showReason ? "포함" : "보기"}
-            </button>
           </div>
 
           {items.length === 0 ? (
@@ -103,7 +81,6 @@ export default function RecommendPage() {
                   rec={rec}
                   rank={index + 1}
                   highlighted={index === 0}
-                  showReason={showReason}
                   onWish={toast.show}
                 />
               ))}
@@ -122,22 +99,22 @@ function RecommendationCard({
   rec,
   rank,
   highlighted,
-  showReason,
   onWish,
 }: {
   rec: Rec;
   rank: number;
   highlighted: boolean;
-  showReason: boolean;
   onWish: (message: string) => void;
 }) {
   const router = useRouter();
   const [wished, setWished] = useState(rec.is_wished);
+  const [expanded, setExpanded] = useState(highlighted);
   const similarity = Math.round(rec.similarity * (rec.similarity <= 1 ? 100 : 1));
   const reasonItems = buildReasonItems(rec);
 
   const toggleWish = async (event: React.MouseEvent) => {
     event.preventDefault();
+    event.stopPropagation();
     if (!auth.token) {
       router.push("/login");
       return;
@@ -151,6 +128,12 @@ function RecommendationCard({
     } catch {
       setWished((value) => !value);
     }
+  };
+
+  const toggleReason = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setExpanded((value) => !value);
   };
 
   return (
@@ -188,7 +171,11 @@ function RecommendationCard({
                 </p>
               </div>
 
-              <button onClick={toggleWish} aria-label="찜하기" className="shrink-0 p-1 text-ink">
+              <button
+                onClick={toggleWish}
+                aria-label={wished ? "찜 해제" : "찜하기"}
+                className={`shrink-0 p-1 transition-colors ${wished ? "text-[#ff3b30]" : "text-[#7b8490]"}`}
+              >
                 <I.Heart className="w-7 h-7" filled={wished} />
               </button>
             </div>
@@ -200,7 +187,7 @@ function RecommendationCard({
           </div>
         </div>
 
-        {showReason && highlighted && (
+        {expanded && (
           <div className="mt-4 rounded-2xl border border-[#bfe7ca] bg-[#fbfffc] px-4 py-3.5">
             <p className="text-[14px] font-extrabold text-[#078f42]">추천 이유</p>
             <ul className="mt-2.5 space-y-2">
@@ -214,12 +201,22 @@ function RecommendationCard({
           </div>
         )}
 
-        {showReason && (
-          <div className={`flex items-start gap-2 ${highlighted ? "mt-4" : "mt-3 border-t border-line pt-3"}`}>
+        <div className={`${expanded ? "mt-3" : highlighted ? "mt-4" : "mt-3 border-t border-line pt-3"}`}>
+          <div className="flex items-start gap-2">
             <I.Logo className="mt-0.5 h-5 w-5 shrink-0 text-[#58c97a]" />
-            <p className="text-[13px] leading-[1.55] text-[#555f69]">{rec.reason || reasonItems[0]}</p>
+            <p className="flex-1 text-[13px] leading-[1.55] text-[#555f69]">{rec.reason || reasonItems[0]}</p>
           </div>
-        )}
+
+          {!highlighted && (
+            <button
+              onClick={toggleReason}
+              className="mt-2 ml-7 inline-flex items-center gap-1 text-[12.5px] font-bold text-brand"
+            >
+              {expanded ? "접기" : "왜 추천했나요?"}
+              <span className={`text-[13px] transition-transform ${expanded ? "rotate-180" : ""}`}>⌄</span>
+            </button>
+          )}
+        </div>
       </div>
     </Link>
   );
