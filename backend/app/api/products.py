@@ -304,7 +304,7 @@ def _jaccard(a: set[str], b: set[str]) -> float:
 
 
 def _tags(base: Product, p: Product, sim: float, kind: str) -> list[str]:
-    tags = [f"유사도 {round(sim * 100)}%"]
+    tags: list[str] = []
     if kind == "lactose_free":
         tags = ["락토프리", "유당 0%"]
     elif kind == "plant_based":

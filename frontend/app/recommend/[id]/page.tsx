@@ -200,7 +200,6 @@ function RecommendationCard({
   const router = useRouter();
   const [wished, setWished] = useState(rec.is_wished);
   const [expanded, setExpanded] = useState(highlighted);
-  const similarity = Math.round(rec.similarity * (rec.similarity <= 1 ? 100 : 1));
   const reasonItems = buildReasonItems(rec);
 
   const toggleWish = async (event: React.MouseEvent) => {
@@ -271,7 +270,6 @@ function RecommendationCard({
               </button>
             </div>
 
-            <p className="mt-2 text-[15px] font-extrabold text-[#059447]">유사도 {similarity}%</p>
             <div className="mt-1.5">
               <Stars rating={rec.rating} count={rec.rating_count} />
             </div>
