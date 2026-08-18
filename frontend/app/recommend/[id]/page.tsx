@@ -312,7 +312,10 @@ function RecommendationCard({
 }
 
 function buildReasonItems(rec: Rec) {
-  const tags = rec.tags.filter(Boolean).slice(0, 3);
+  const tags = rec.tags
+    .filter(Boolean)
+    .filter((tag) => !/^유사도\s*\d+%?$/.test(tag.trim()))
+    .slice(0, 3);
   if (tags.length >= 3) return tags.map((tag) => `${tag} 측면에서 대체용으로 적합해요`);
 
   const defaults = ["원재료 구성이 유사해요", "주의 성분이 상대적으로 적어요", "대체용으로 선택하기 좋아요"];
