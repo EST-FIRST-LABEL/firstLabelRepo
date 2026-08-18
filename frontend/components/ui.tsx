@@ -360,19 +360,46 @@ export function RiskChip({ level }: { level: RiskLevel }) {
 
 /* ---------- 제품 ---------- */
 
-/** 제품 썸네일. 이미지 URL이 없으면 우유팩+돋보기 일러스트로 대체한다. */
+// 이미지가 없을 때 쓰는 색상 팔레트. 제품명 해시로 고르므로 항상 같은 제품 = 같은 색.
+const THUMB_COLORS = [
+  { bg: "#eaf6ee", fg: "#0c7a3d" },
+  { bg: "#fff2e6", fg: "#b45309" },
+  { bg: "#fdecec", fg: "#b91c1c" },
+  { bg: "#eef2ff", fg: "#4338ca" },
+  { bg: "#fdf4ff", fg: "#a21caf" },
+  { bg: "#ecfeff", fg: "#0e7490" },
+];
+
+function thumbStyle(name: string) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return THUMB_COLORS[h % THUMB_COLORS.length];
+}
+
+/** 제품 썸네일. 이미지 URL이 없으면 제품명 기반 색상 + 앞 두 글자로 대체한다. */
 export function ProductThumb({ url, name, className = "w-14 h-16" }: { url?: string; name: string; className?: string }) {
   if (url)
     // 외부 이미지 URL을 그대로 참조 (§9 이미지 처리 방침)
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={url} alt={name} className={`${className} object-contain shrink-0`} />;
 
+  const { bg, fg } = thumbStyle(name);
+  // 브랜드명을 빼고 제품 고유명에서 두 글자를 뽑는다 (예: "빙그레 딸기맛우유" → "딸기")
+  const core = name.split(" ").slice(-1)[0] || name;
+  const label = core.replace(/[^가-힣a-zA-Z0-9]/g, "").slice(0, 2) || name.slice(0, 2);
+
   return (
     <div
-      className={`${className} rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-[#f4f8f6]`}
+      className={`${className} rounded-xl flex flex-col items-center justify-center gap-0.5 shrink-0 overflow-hidden`}
+      style={{ background: bg }}
       aria-label={name}
     >
-      <I.UnknownProduct className="w-[86%] h-[86%]" />
+      <span className="shrink-0 leading-none" style={{ color: fg, opacity: 0.45 }}>
+        <I.Milk className="w-4 h-4" />
+      </span>
+      <span className="text-[13px] font-extrabold leading-none" style={{ color: fg }}>
+        {label}
+      </span>
     </div>
   );
 }

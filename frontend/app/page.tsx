@@ -77,16 +77,12 @@ export default function HomePage() {
               <br />쉽게 확인할 수 있어요.
             </p>
 
-            <div className="absolute right-0 top-2 w-[120px] h-[150px] flex items-center justify-center text-brand/60">
-              <div className="w-[82px] h-[112px] rounded-[18px] border-2 border-brand/20 bg-white relative">
-                <div className="absolute -top-4 left-3 right-3 h-5 rounded-t-md border-2 border-brand/20 bg-white" />
-                <span className="absolute inset-x-0 top-12 text-center text-[19px] font-extrabold text-[#6daee8]">MILK</span>
-              </div>
-              <div className="absolute right-0 bottom-6 w-[58px] h-[58px] rounded-full border-[8px] border-ink/80 bg-white flex items-center justify-center">
-                <I.Check className="w-7 h-7 text-brand-light" />
-                <span className="absolute w-9 h-2 rounded-full bg-ink/80 rotate-45 -right-7 -bottom-3" />
-              </div>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/milk-hero.png"
+              alt="유당 확인 일러스트"
+              className="absolute right-0 top-1 w-[132px] h-auto object-contain"
+            />
           </div>
         </section>
 
