@@ -19,5 +19,9 @@ supabase==2.11.0
 # paddlepaddle==2.6.2
 # paddleocr==2.9.1
 
+# 검색 하이브리드(임베딩+키워드) 랭킹 (ONNX 기반, PyTorch 불필요. 첫 실행 시 모델
+# 다운로드 필요. 미설치 시 /api/v1/products/search 는 기존 ilike 검색으로 자동 대체됨)
+# fastembed==0.8.0
+
 # 벡터 임베딩 (Supabase pgvector)
 pgvector==0.3.6

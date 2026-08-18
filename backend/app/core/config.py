@@ -56,6 +56,11 @@ class Settings:
     OCR_SERVICE_URL: str = os.getenv("OCR_SERVICE_URL", "")
     OCR_API_KEY: str = os.getenv("OCR_API_KEY", "")
 
+    # 검색 임베딩 우선순위: 원격 임베딩 서비스 > 로컬 fastembed > (없으면 ilike 폴백)
+    # 서버리스(Vercel)는 모델 용량·콜드스타트 제약이 있어 원격 서비스로 분리한다.
+    EMBEDDING_SERVICE_URL: str = os.getenv("EMBEDDING_SERVICE_URL", "")
+    EMBEDDING_API_KEY: str = os.getenv("EMBEDDING_API_KEY", "")
+
     CORS_ORIGINS: list[str] = _csv("CORS_ORIGINS") or ["http://localhost:3000"]
     PUBLIC_BASE_URL: str = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000")
 

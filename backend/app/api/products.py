@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.db import Analysis, Product, SearchHistory, User, Wishlist, get_db
 from app.core.security import current_user, optional_user
-from app.services import alan
+from app.services import alan, embedding_search
 from app.services.ingredients import analyze
 
 router = APIRouter(prefix="/api/v1/products", tags=["products"])
@@ -51,12 +51,6 @@ def search(
     user: User | None = Depends(optional_user),
 ):
     stmt = select(Product)
-    if q:
-        like = f"%{q}%"
-        # 제품명 / 브랜드 / 원재료 어느 쪽이든 검색 (§홈 화면 placeholder)
-        stmt = stmt.where(
-            or_(Product.name.ilike(like), Product.maker_name.ilike(like), Product.raw_ingredients.ilike(like))
-        )
     if category:
         stmt = stmt.where(Product.category == category)
     if lactose_free:
@@ -64,7 +58,26 @@ def search(
     if plant_based:
         stmt = stmt.where(Product.is_plant_based.is_(True))
 
-    items = list(db.scalars(stmt.order_by(Product.rating.desc()).limit(limit)))
+    if q:
+        pool = list(db.scalars(stmt))
+        ranked = embedding_search.rank_products(q, pool, limit)
+        if ranked is None:
+            # 임베딩 모델을 못 쓰는 환경(예: 미설치, 서버리스)이면 기존 ilike 방식으로 대체
+            like = q.lower()
+            items = [
+                p
+                for p in pool
+                if like in (p.name or "").lower()
+                or like in (p.maker_name or "").lower()
+                or like in (p.raw_ingredients or "").lower()
+            ]
+            items.sort(key=lambda p: -p.rating)
+            items = items[:limit]
+        else:
+            items = [r.product for r in ranked]
+    else:
+        items = list(db.scalars(stmt.order_by(Product.rating.desc()).limit(limit)))
+
     if q and user:
         db.add(SearchHistory(user_id=user.id, keyword=q))
         db.commit()
