@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api import analysis, auth, products, registrations, users
-from app.core.config import IS_SERVERLESS, settings
+from app.core.config import IS_CLOUD_RUN, IS_SERVERLESS, settings
 from app.core.db import init_db
 
 app = FastAPI(
@@ -32,9 +32,9 @@ app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads"
 
 @app.on_event("startup")
 def on_startup() -> None:
-    # 서버리스는 콜드스타트마다 실행되므로 스키마 생성은 건너뛴다.
+    # 서버리스/Cloud Run은 콜드스타트마다 실행되므로 스키마 생성은 건너뛴다.
     # (배포 전 로컬/스크립트에서 한 번만 만들면 된다)
-    if not IS_SERVERLESS:
+    if not IS_SERVERLESS and not IS_CLOUD_RUN:
         init_db()
 
 
