@@ -394,7 +394,9 @@ export function ProductThumb({ url, name, className = "w-14 h-16" }: { url?: str
       style={{ background: bg }}
       aria-label={name}
     >
-      <I.Milk className="w-4 h-4 shrink-0" style={{ color: fg, opacity: 0.45 }} />
+      <span className="shrink-0 leading-none" style={{ color: fg, opacity: 0.45 }}>
+        <I.Milk className="w-4 h-4" />
+      </span>
       <span className="text-[13px] font-extrabold leading-none" style={{ color: fg }}>
         {label}
       </span>
