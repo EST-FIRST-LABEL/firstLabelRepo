@@ -28,7 +28,15 @@ export default function SignupPage() {
   const confirmErr = confirm && confirm !== password ? "비밀번호가 일치하지 않습니다." : null;
 
   const step1Ready =
-    !!nickname && !!loginId && !!password && !!confirm && !nicknameErr && !idErr && !pwErr && !confirmErr;
+    !!nickname &&
+    !!loginId &&
+    !!password &&
+    !!confirm &&
+    !nicknameErr &&
+    !idErr &&
+    !pwErr &&
+    !confirmErr &&
+    idChecked?.ok === true;
 
   const checkId = async () => {
     if (idErr || !loginId) return setIdChecked({ ok: false, message: idErr ?? "아이디를 입력해주세요." });
