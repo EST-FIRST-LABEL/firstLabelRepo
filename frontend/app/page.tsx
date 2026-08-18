@@ -10,7 +10,13 @@ import { ThreeTabNav } from "@/components/three-tab-nav";
 import { api, type Product } from "@/lib/api";
 
 type HomeData = { categories: { code: string; label: string; icon: string }[]; recommended: Product[] };
-type Suggestion = { id: number; name: string; maker_name: string };
+type Suggestion = {
+  id: number;
+  name: string;
+  maker_name: string;
+  image_url: string;
+  is_lactose_free: boolean;
+};
 
 export default function HomePage() {
   const router = useRouter();
@@ -105,18 +111,37 @@ export default function HomePage() {
             </div>
 
             {showSuggestions && q.trim() && suggestions.length > 0 && (
-              <div className="absolute z-30 left-0 right-0 top-full mt-2 fl-card divide-y divide-line overflow-hidden">
-                {suggestions.map((p) => (
-                  <button
-                    key={p.id}
-                    onMouseDown={() => router.push(`/products/${p.id}`)}
-                    className="w-full flex items-center gap-3 px-4 h-[52px] text-left active:bg-mint-soft"
-                  >
-                    <I.Search className="w-4 h-4 text-[#b6bcc3] shrink-0" />
-                    <span className="flex-1 min-w-0 truncate text-[14px]">{p.name}</span>
-                    <span className="text-[12px] text-sub shrink-0">{p.maker_name}</span>
-                  </button>
-                ))}
+              <div className="absolute z-30 left-0 right-0 top-full mt-2 fl-card overflow-hidden">
+                <div className="flex items-center justify-between gap-2 px-4 pt-2.5 pb-2">
+                  <span className="flex items-center gap-1 text-[11px] font-semibold text-brand whitespace-nowrap truncate min-w-0">
+                    <span className="text-brand-light shrink-0">✦</span> AI가 검색 의도와 가까운 상품을 찾았어요.
+                  </span>
+                  <span className="text-[10.5px] text-sub shrink-0 whitespace-nowrap">바로 확인해보세요.</span>
+                </div>
+                <div className="px-2 pb-2 space-y-1.5">
+                  {suggestions.map((p, idx) => (
+                    <button
+                      key={p.id}
+                      onMouseDown={() => router.push(`/products/${p.id}`)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-left active:bg-mint-soft ${
+                        idx === 0 ? "border border-brand bg-mint-soft" : ""
+                      }`}
+                    >
+                      <ProductThumb url={p.image_url} name={p.name} className="w-12 h-12" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-[15px] leading-snug truncate">{p.name}</p>
+                        <span
+                          className={`mt-1 inline-block text-[11.5px] font-semibold px-2 py-0.5 rounded-full ${
+                            p.is_lactose_free ? "bg-safe-bg text-brand" : "bg-[#eef1f4] text-sub"
+                          }`}
+                        >
+                          {p.is_lactose_free ? "유당 걱정 없음" : "주의 필요"}
+                        </span>
+                      </div>
+                      <I.Chevron className="w-4 h-4 text-[#c3c9cf] shrink-0" />
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>

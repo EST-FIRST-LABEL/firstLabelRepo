@@ -58,7 +58,18 @@ def autocomplete(q: str = "", limit: int = 3, db: Session = Depends(get_db)):
             .limit(limit)
         )
     )
-    return {"items": [{"id": p.id, "name": p.name, "maker_name": p.maker_name} for p in rows]}
+    return {
+        "items": [
+            {
+                "id": p.id,
+                "name": p.name,
+                "maker_name": p.maker_name,
+                "image_url": p.image_url,
+                "is_lactose_free": p.is_lactose_free,
+            }
+            for p in rows
+        ]
+    }
 
 
 @router.get("/search")
