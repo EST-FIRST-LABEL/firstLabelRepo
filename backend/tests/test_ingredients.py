@@ -60,6 +60,20 @@ def test_lactose_free_overrides_milk_keywords():
     assert r["score"] > 90
 
 
+def test_context_safe_signal_does_not_mask_other_dairy_ingredients():
+    """이슈 #10: "락타아제"가 별개 원료로 나열되면 우유·유청까지 안전 처리되면 안 된다."""
+    r = analyze("우유, 유청, 락타아제")
+    risky = {i["name"] for i in r["all_ingredients"] if i["risk_level"] in ("DANGER", "WARNING")}
+    assert risky == {"우유", "유청"}, risky
+    assert r["has_warning"] is True
+
+
+def test_split_by_space_does_not_merge_known_short_ingredient():
+    """이슈 #10: "원유"처럼 사전에 있는 2자 원료명은 다음 토큰과 붙이면 안 된다."""
+    parts = split_ingredients("원유 정제수 설탕 코코아분말")
+    assert parts == ["원유", "정제수", "설탕", "코코아분말"], parts
+
+
 def test_plant_based_is_clean():
     r = analyze("아몬드액(미국산), 정제수, 설탕, 코코아분말, 천연향료")
     assert r["counts"]["danger"] == 0 and r["counts"]["warning"] == 0

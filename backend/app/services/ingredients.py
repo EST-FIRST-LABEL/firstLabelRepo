@@ -22,6 +22,17 @@ def get_group(group_code: str) -> dict | None:
     return next((g for g in _dictionary()["groups"] if g["group_code"] == group_code), None)
 
 
+@lru_cache(maxsize=1)
+def _known_tokens() -> set[str]:
+    """사전에 등록된 원재료명(2자 이하 포함) 정규화 집합. 짧은 토큰 병합 방지용."""
+    tokens = set()
+    for group in _dictionary()["groups"]:
+        for kw in group["keywords"]:
+            for token in [kw["keyword"], *kw["aliases"]]:
+                tokens.add(_norm(token))
+    return tokens
+
+
 def _norm(text: str) -> str:
     """비교용 정규화: 공백/특수문자 제거 + 소문자."""
     return re.sub(r"[^0-9a-z가-힣]", "", (text or "").lower())
@@ -106,14 +117,17 @@ def _split_by_space(chunk: str) -> list[str]:
     """쉼표가 없는 덩어리를 공백으로 나눈다.
 
     OCR은 단어 중간에도 공백을 넣는다("카제 인나트륨"). 2글자 이하 조각은
-    다음 조각에 붙여서 되살린다.
-    ponytail: 길이 기반 휴리스틱. 오분리가 잦아지면 사전 기반 병합으로 교체.
+    다음 조각에 붙여서 되살린다. 단, 그 조각이 이미 사전에 등록된 원재료명이면
+    ("원유", "유청" 등) 병합하지 않는다 — 그렇지 않으면 "원유 정제수"가
+    "원유정제수"로 뭉개져 위험 성분이 통째로 사라진다.
     """
     tokens = [t for t in re.split(r"\s+", chunk) if t]
+    known = _known_tokens()
     out: list[str] = []
     for token in tokens:
-        if out and len(re.sub(r"[^0-9a-zA-Z가-힣]", "", out[-1])) <= 2:
-            out[-1] = out[-1] + token
+        prev = out[-1] if out else ""
+        if out and len(re.sub(r"[^0-9a-zA-Z가-힣]", "", prev)) <= 2 and _norm(prev) not in known:
+            out[-1] = prev + token
         else:
             out.append(token)
     return out
@@ -125,6 +139,16 @@ def split_ingredients(raw_text: str) -> list[str]:
     괄호 안의 쉼표는 원산지·부원료 표기라 분할 기준에서 제외한다.
     (예: "원유(국산), 정제수" → ["원유(국산)", "정제수"])
     OCR이 쉼표를 놓친 경우에는 공백으로도 나눈다.
+    """
+    return [name for name, _ in split_ingredients_with_context(raw_text)]
+
+
+def split_ingredients_with_context(raw_text: str) -> list[tuple[str, str]]:
+    """(정제된 원재료명, 그 원재료가 속했던 원본 콤마 구간) 목록.
+
+    "락타아제 처리로 유당 분해" 같은 안전 표기는 콤마 구간(원문 단위)으로
+    붙어 있어야 의미가 있다. 공백 분할(_split_by_space)로 쪼갠 개별 토큰만
+    보면 원재료명과 그 설명이 서로 다른 토큰으로 갈라져 문맥을 놓친다.
     """
     text = _strip_header(extract_section(raw_text))
     text = text.replace("\n", ",").replace("·", ",").replace("/", ",")
@@ -143,16 +167,17 @@ def split_ingredients(raw_text: str) -> list[str]:
     parts.append(buf)
 
     # 쉼표가 거의 없으면 OCR이 놓친 것으로 보고 공백으로도 나눈다
-    expanded: list[str] = []
+    expanded: list[tuple[str, str]] = []
     for p in parts:
         chunk = p.strip()
         if len(_norm(chunk)) > 10 and " " in chunk.strip():
-            expanded.extend(_split_by_space(chunk))
+            expanded.extend((piece, chunk) for piece in _split_by_space(chunk))
         else:
-            expanded.append(chunk)
+            expanded.append((chunk, chunk))
 
-    out, seen = [], set()
-    for p in expanded:
+    out: list[tuple[str, str]] = []
+    seen = set()
+    for p, context in expanded:
         name = re.sub(r"\s+", " ", p).strip(" .,·-—")
         # 제조업소/유통전문판매업소 등이 나오면 그 뒤는 원재료가 아니다
         if SECTION_END.search(name):
@@ -162,7 +187,7 @@ def split_ingredients(raw_text: str) -> list[str]:
         if _norm(name) in seen:
             continue
         seen.add(_norm(name))
-        out.append(name)
+        out.append((name, context))
     return out
 
 
@@ -189,7 +214,8 @@ def analyze(raw_text: str, user_filter: list[str] | None = None) -> dict:
     codes = user_filter or ["LACTOSE", "GENERAL"]
     groups = [g for g in _dictionary()["groups"] if g["group_code"] in codes]
 
-    # 유당 필터가 켜져 있으면 문서 전체의 "락토프리" 표기를 먼저 본다 (개별 원료보다 우선)
+    # 문서 전체에 "락토프리/무유당" 같은 명시적 라벨 표기가 있으면 우선 적용한다.
+    # ("락타아제", "유당분해" 같은 공정 설명 단어는 여기 포함하지 않는다 — 아래 참고)
     lactose_free = any(
         _norm(s) in _norm(raw_text)
         for g in groups
@@ -197,9 +223,17 @@ def analyze(raw_text: str, user_filter: list[str] | None = None) -> dict:
     )
 
     all_ingredients = []
-    for name in split_ingredients(raw_text):
+    for name, context in split_ingredients_with_context(raw_text):
         risk, matched, desc = _match(name, groups)
-        if lactose_free and risk in ("DANGER", "WARNING"):
+        # "락타아제로 유당 분해" 같은 공정 설명은 그 원료가 속한 원문 콤마 구간에
+        # 함께 적혀 있을 때만 안전 처리한다. 문서 전체로 적용하면 "우유, 유청, 락타아제"처럼
+        # 별개 원료로 나열된 경우까지 우유·유청의 위험이 가려진다 (이슈 #10).
+        context_safe = any(
+            _norm(s) in _norm(context)
+            for g in groups
+            for s in g.get("context_safe_signals", [])
+        )
+        if (lactose_free or context_safe) and risk in ("DANGER", "WARNING"):
             risk, desc = "SAFE", "유당 분해(락토프리) 제품으로 표기돼 있어요."
             matched = None
         all_ingredients.append(
