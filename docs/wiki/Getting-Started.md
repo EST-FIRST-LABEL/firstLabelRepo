@@ -31,10 +31,10 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-데모 데이터 시드:
+HACCP 카탈로그 적재:
 
 ```bash
-python ../scripts/seed_products.py --demo-user
+python ../scripts/import_haccp_products.py <HACCP_CSV_PATH>
 ```
 
 서버 실행:
@@ -64,16 +64,7 @@ npm run dev
 NEXT_PUBLIC_API_BASE=http://localhost:8000
 ```
 
-## 3. 데모 계정
-
-현재 데모 시드 기준 계정:
-
-```text
-ID: firstlabel2024
-PW: firstlabel2024!
-```
-
-## 4. 기본 환경 변수
+## 3. 기본 환경 변수
 
 백엔드의 주요 환경 변수는 다음과 같습니다.
 
@@ -92,7 +83,7 @@ PW: firstlabel2024!
 
 > `.env`, API Key, service_role 키와 같은 비밀값은 GitHub에 커밋하지 않습니다.
 
-## 5. 빠른 검증
+## 4. 빠른 검증
 
 백엔드 핵심 로직:
 

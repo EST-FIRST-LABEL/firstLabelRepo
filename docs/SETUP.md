@@ -57,11 +57,11 @@ DATABASE_URL=postgresql://postgres.xxxxx:실제비밀번호@aws-0-ap-southeast-2
 - **B안 (SQL)** — Supabase 대시보드 → **SQL Editor** → `supabase/schema.sql` 내용 붙여넣고 **Run**.
   임베딩 테이블을 쓰려면 이 파일 맨 위의 `create extension vector` 가 필요하므로 B안을 권합니다.
 
-### 1-5. 시드 + 확인
+### 1-5. HACCP 카탈로그 적재 + 확인
 
 ```bash
 cd backend
-.venv/Scripts/python ../scripts/seed_products.py --demo-user
+.venv/Scripts/python ../scripts/import_haccp_products.py <HACCP_CSV_PATH>
 .venv/Scripts/python -m uvicorn app.main:app --reload --port 8000
 ```
 
@@ -70,7 +70,7 @@ curl http://localhost:8000/api/v1/health
 # "db": "postgres(supabase)"  ← 이렇게 나오면 성공
 ```
 
-Supabase 대시보드 → **Table Editor** 에 테이블 9개와 제품 15건이 보입니다.
+Supabase 대시보드 → **Table Editor** 에 테이블과 HACCP 상품이 보입니다.
 
 ### 자주 나는 오류
 

@@ -22,6 +22,13 @@ from app.services.product_profiles import profile_tokens
 router = APIRouter(prefix="/api/v1/products", tags=["products"])
 
 
+def _catalog_stmt():
+    return select(Product).where(
+        Product.report_no.is_not(None),
+        Product.image_source == "haccp_csv",
+    )
+
+
 def card(p: Product, is_wished: bool = False) -> dict:
     return {
         "id": p.id,
@@ -64,7 +71,7 @@ def autocomplete(q: str = "", limit: int = 3, db: Session = Depends(get_db)):
         return {"items": []}
     rows = list(
         db.scalars(
-            select(Product)
+            _catalog_stmt()
             .where(Product.name.ilike(f"%{keyword}%"))
             .order_by(Product.rating.desc())
             .limit(limit)
@@ -94,7 +101,7 @@ def search(
     db: Session = Depends(get_db),
     user: User | None = Depends(optional_user),
 ):
-    stmt = select(Product)
+    stmt = _catalog_stmt()
     if category:
         stmt = stmt.where(Product.category == category)
     if lactose_free:
@@ -132,18 +139,41 @@ def search(
 
 @router.get("/home")
 def home(db: Session = Depends(get_db), user: User | None = Depends(optional_user)):
-    items = list(db.scalars(select(Product).order_by(Product.rating.desc()).limit(6)))
+    items = list(
+        db.scalars(
+            _catalog_stmt()
+            .where(Product.image_url != "")
+            .order_by(Product.wishlist_count.desc(), Product.id.asc())
+            .limit(6)
+        )
+    )
     wished = _wished_ids(db, user, [p.id for p in items])
+    category_rows = db.execute(
+        select(Product.category, func.count(Product.id).label("product_count"))
+        .where(
+            Product.report_no.is_not(None),
+            Product.image_source == "haccp_csv",
+            Product.category != "",
+        )
+        .group_by(Product.category)
+        .order_by(func.count(Product.id).desc(), Product.category)
+        .limit(5)
+    )
     categories = [
-        {"code": c, "label": l, "icon": i}
-        for c, l, i in [
-            ("유제품", "유제품", "milk"),
-            ("음료", "음료", "drink"),
-            ("스낵", "스낵", "snack"),
-            ("베이커리", "베이커리", "bakery"),
-        ]
+        {"code": category, "label": category, "icon": _category_icon(category)}
+        for category, _ in category_rows
     ]
     return {"categories": categories, "recommended": [card(p, p.id in wished) for p in items]}
+
+
+def _category_icon(category: str) -> str:
+    if any(word in category for word in ("우유", "유제품", "발효유", "치즈", "크림", "버터")):
+        return "milk"
+    if any(word in category for word in ("음료", "두유")):
+        return "drink"
+    if "빵" in category:
+        return "bakery"
+    return "snack"
 
 
 @router.get("/{product_id}")
