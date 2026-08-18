@@ -50,6 +50,13 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(TS, default=now, server_default=func.now())
     deleted_at: Mapped[datetime | None] = mapped_column(TS, nullable=True)
+    # 알림 설정. 프로덕션 users 테이블에 NOT NULL 컬럼으로 존재하므로 INSERT 시 값을
+    # 반드시 제공해야 한다(미제공 시 NotNullViolation). 기본값을 클라이언트 측에서 채운다.
+    notify_push: Mapped[bool] = mapped_column(Boolean, default=True)
+    notify_registration: Mapped[bool] = mapped_column(Boolean, default=True)
+    notify_analysis: Mapped[bool] = mapped_column(Boolean, default=True)
+    notify_recommend: Mapped[bool] = mapped_column(Boolean, default=False)
+    notify_event: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
 class Product(Base):
