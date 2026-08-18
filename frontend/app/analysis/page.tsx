@@ -68,7 +68,26 @@ export default function AnalysisPage() {
   if (result) {
     return (
       <Screen>
-        <AppHeader title="분석 결과" />
+        <AppHeader
+          title="분석 결과"
+          right={
+            <button
+              type="button"
+              aria-label="분석 결과 공유"
+              onClick={() => {
+                if (typeof navigator !== "undefined" && navigator.share) {
+                  navigator.share({ title: "FIRST LABEL 분석 결과", text: result.has_warning ? "유당 관련 주의 성분이 확인됐어요." : "유당 관련 주의 성분이 확인되지 않았어요." }).catch(() => {});
+                }
+              }}
+              className="text-ink"
+            >
+              <svg viewBox="0 0 24 24" className="w-[23px] h-[23px]" fill="none" stroke="currentColor" strokeWidth="1.9">
+                <path d="M12 15V3m0 0 4 4m-4-4L8 7" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M5 11v8h14v-8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          }
+        />
         <ScanResult result={result} />
         <ThreeTabNav active="/" />
       </Screen>
@@ -144,75 +163,84 @@ export default function AnalysisPage() {
 
 export function ScanResult({ result }: { result: AnalysisResult }) {
   const product = result.product;
+  const warnings = result.first_card;
 
   return (
-    <div className="px-5 pt-5 pb-6 space-y-4">
-      {product && (
-        <section className="fl-card p-4 flex items-center gap-4">
-          <ProductThumb url={product.image_url} name={product.name} className="w-[72px] h-[88px]" />
-          <div className="min-w-0">
-            <h2 className="text-[20px] font-extrabold leading-snug line-clamp-2">{product.name}</h2>
-            <p className="text-[13.5px] text-sub mt-1">{product.maker_name}</p>
-            {product.volume && <p className="text-[13.5px] text-sub">{product.volume}</p>}
+    <div className="px-4 pt-4 pb-8 space-y-4">
+      <section className="rounded-[24px] bg-white border border-line/70 shadow-[0_10px_30px_rgba(17,24,39,0.06)] p-4">
+        {product && (
+          <div className="flex items-center gap-4 px-1 pb-4">
+            <div className="w-[70px] h-[88px] rounded-[18px] bg-[#f6fbf7] border border-brand/10 flex items-center justify-center shrink-0 overflow-hidden">
+              <ProductThumb url={product.image_url} name={product.name} className="w-[54px] h-[70px]" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-[20px] font-extrabold leading-snug line-clamp-2 text-ink">{product.name}</h2>
+              <p className="text-[13.5px] text-sub mt-1">{product.maker_name}</p>
+              {product.volume && <p className="text-[13.5px] text-sub mt-0.5">{product.volume}</p>}
+            </div>
           </div>
-        </section>
-      )}
+        )}
 
-      <section className={`rounded-3xl border p-5 ${result.has_warning ? "border-warn bg-warn-bg/35" : "border-brand/20 bg-safe-bg"}`}>
-        <div className="flex items-start gap-3">
-          {result.has_warning ? (
-            <I.Alert className="w-9 h-9 text-warn shrink-0" />
-          ) : (
-            <div className="w-9 h-9 rounded-full bg-brand text-white flex items-center justify-center shrink-0"><I.Check className="w-5 h-5" /></div>
-          )}
-          <div>
-            <h2 className={`text-[22px] font-extrabold ${result.has_warning ? "text-warn" : "text-brand"}`}>
-              {result.has_warning ? "유당이 있을 수 있어요" : "유당 관련 주의 성분이 없어요"}
-            </h2>
-            <p className="mt-2 text-[14px] leading-[1.65] text-ink/85">
-              {result.has_warning
-                ? "유당이 남아 있을 가능성이 있는 원재료가 확인됐어요. 민감한 경우 섭취에 주의하세요."
-                : "현재 라벨에서는 유당 관련 주의 성분이 확인되지 않았어요."}
-            </p>
-            <p className="mt-3 text-[12.5px] text-sub">주의 원료 {result.warning_count}개 · 전체 원료 {result.counts.total}개</p>
+        <div className={`rounded-[22px] border px-4 py-5 ${result.has_warning ? "border-[#ff6a00] bg-[#fffaf6]" : "border-brand/30 bg-safe-bg"}`}>
+          <div className="flex items-start gap-3.5">
+            {result.has_warning ? (
+              <div className="w-10 h-10 rounded-full bg-[#ff5a00] text-white flex items-center justify-center shrink-0 text-[22px] font-bold">!</div>
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-brand text-white flex items-center justify-center shrink-0"><I.Check className="w-6 h-6" /></div>
+            )}
+            <div className="min-w-0 flex-1">
+              <h2 className={`text-[22px] font-extrabold leading-tight ${result.has_warning ? "text-[#f05a00]" : "text-brand"}`}>
+                {result.has_warning ? "유당이 있을 수 있어요" : "유당 관련 주의 성분이 없어요"}
+              </h2>
+              <p className="mt-3 text-[14px] leading-[1.7] text-ink/85">
+                {result.has_warning
+                  ? `${warnings[0]?.ingredient_name ?? "유당 관련 원재료"}이 포함되어 유당이 남아 있을 가능성이 있어요. 민감한 경우 섭취에 주의하세요.`
+                  : "현재 라벨에서는 유당 관련 주의 성분이 확인되지 않았어요."}
+              </p>
+              <p className="mt-4 text-[12.5px] text-sub">주의 원료 {result.warning_count}개 · 전체 원료 {result.counts.total}개</p>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="fl-card p-4">
-        <h3 className="font-extrabold text-[19px] mb-2">주의가 필요한 원재료</h3>
-        {result.first_card.length === 0 ? (
-          <div className="py-6 text-center text-[13.5px] text-sub">주의가 필요한 원재료가 없어요.</div>
+      <section className="rounded-[24px] bg-white border border-line/70 shadow-[0_10px_30px_rgba(17,24,39,0.06)] px-4 py-5">
+        <h3 className="font-extrabold text-[20px] mb-2">주의가 필요한 원재료</h3>
+        {warnings.length === 0 ? (
+          <div className="py-8 text-center text-[13.5px] text-sub">주의가 필요한 원재료가 없어요.</div>
         ) : (
-          <div className="divide-y divide-line">
-            {result.first_card.map((c) => (
-              <div key={c.ingredient_name} className="py-4 first:pt-2 last:pb-1 flex gap-3">
-                <span className={`mt-1 w-7 h-7 rounded-full flex items-center justify-center text-white shrink-0 ${RISK[c.risk_level].dot}`}>
-                  <span className="text-[14px] font-extrabold">!</span>
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <b className="text-[16px]">{c.ingredient_name}</b>
-                    <RiskChip level={c.risk_level} />
+          <div className="divide-y divide-line/80">
+            {warnings.map((c) => {
+              const isDanger = c.risk_level === "DANGER" || c.risk_level === "WARNING";
+              const badgeText = isDanger ? "주의 필요" : "주의";
+              const badgeClass = isDanger ? "bg-[#fff0f0] text-[#ff3434]" : "bg-[#fff3e8] text-[#ff6a00]";
+              const dotClass = isDanger ? "bg-[#ff3434]" : "bg-[#ff6a00]";
+
+              return (
+                <div key={`${c.ingredient_name}-${c.matched_keyword ?? ""}`} className="py-4 first:pt-3 last:pb-1">
+                  <div className="flex items-start gap-3">
+                    <span className={`mt-0.5 w-7 h-7 rounded-full ${dotClass} text-white flex items-center justify-center shrink-0 font-extrabold`}>!</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <b className="text-[17px] leading-snug text-ink">{c.ingredient_name}</b>
+                        <span className={`text-[12px] font-semibold px-2.5 py-1 rounded-full ${badgeClass}`}>{badgeText}</span>
+                      </div>
+                      <p className="text-[13.5px] text-sub mt-2 leading-[1.65]">{c.description}</p>
+                    </div>
+                    <I.Chevron className="w-5 h-5 text-[#adb5bd] mt-1 shrink-0" />
                   </div>
-                  <p className="text-[13.5px] text-sub mt-1.5 leading-[1.6]">{c.description}</p>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
 
-      {result.ai_comment && (
-        <section className="rounded-2xl bg-mint-soft p-4">
-          <p className="font-bold text-[14.5px] text-brand mb-1.5">AI 분석 코멘트</p>
-          <p className="text-[13.5px] leading-[1.6] text-ink/80">{result.ai_comment}</p>
-        </section>
-      )}
-
       {product?.id && (
-        <Link href={`/recommend/${product.id}`} className="block">
-          <Button>대체 제품 추천받기</Button>
+        <Link
+          href={`/recommend/${product.id}`}
+          className="block h-[50px] rounded-2xl border border-brand text-brand font-bold text-[14px] flex items-center justify-center active:bg-mint-soft"
+        >
+          대체 제품 추천받기
         </Link>
       )}
     </div>
