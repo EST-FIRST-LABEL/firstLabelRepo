@@ -1,7 +1,8 @@
 """embedded/search_test_hybrid.py 방식의 실시간 하이브리드(임베딩+키워드) 검색.
 
 임베딩 벡터를 얻는 경로가 두 가지다 (OCR과 동일한 분리 전략).
-  1. EMBEDDING_SERVICE_URL  → 원격 임베딩 서비스 호출 (배포 환경 기본. 서버리스 용량 제한 회피)
+  1. EMBEDDING_SERVICE_URL  → 원격 임베딩 엔드포인트 전체 URL로 POST (배포 환경 기본).
+                             Supabase Edge Function(gte-small) 또는 자체 서비스 모두 가능.
   2. 미설정                 → 같은 프로세스에서 fastembed 실행 (로컬 개발)
 둘 다 실패하면 rank_products()가 None을 돌려주고, 호출부는 이를 기존
 ilike 검색으로 자동 대체하는 신호로 쓴다.
@@ -88,9 +89,18 @@ def _embed(texts: list[str]):
 
 
 def _embed_remote(texts: list[str]):
-    headers = {"X-API-Key": settings.EMBEDDING_API_KEY} if settings.EMBEDDING_API_KEY else {}
+    """EMBEDDING_SERVICE_URL(전체 엔드포인트)에 POST {texts} → {vectors}.
+
+    Supabase Edge Function(Authorization/apikey)과 자체 서비스(X-API-Key)를 모두
+    지원하도록 인증 헤더를 함께 실어 보낸다. EMBEDDING_API_KEY 에는 Supabase의
+    anon(또는 service_role) 키를 넣으면 된다.
+    """
+    key = settings.EMBEDDING_API_KEY
+    headers = (
+        {"Authorization": f"Bearer {key}", "apikey": key, "X-API-Key": key} if key else {}
+    )
     res = httpx.post(
-        f"{settings.EMBEDDING_SERVICE_URL.rstrip('/')}/embed",
+        settings.EMBEDDING_SERVICE_URL,
         json={"texts": texts},
         headers=headers,
         timeout=60.0,
