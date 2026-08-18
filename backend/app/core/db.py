@@ -50,12 +50,6 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(TS, default=now, server_default=func.now())
     deleted_at: Mapped[datetime | None] = mapped_column(TS, nullable=True)
-    # 알림 설정
-    notify_push: Mapped[bool] = mapped_column(Boolean, default=True)
-    notify_registration: Mapped[bool] = mapped_column(Boolean, default=True)
-    notify_analysis: Mapped[bool] = mapped_column(Boolean, default=True)
-    notify_recommend: Mapped[bool] = mapped_column(Boolean, default=False)
-    notify_event: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
 class Product(Base):

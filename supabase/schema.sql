@@ -35,11 +35,6 @@ CREATE TABLE users (
 	password_hash VARCHAR(255) NOT NULL, 
 	created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL, 
 	deleted_at TIMESTAMP WITH TIME ZONE, 
-	notify_push BOOLEAN NOT NULL, 
-	notify_registration BOOLEAN NOT NULL, 
-	notify_analysis BOOLEAN NOT NULL, 
-	notify_recommend BOOLEAN NOT NULL, 
-	notify_event BOOLEAN NOT NULL, 
 	PRIMARY KEY (user_id)
 );
 

@@ -279,22 +279,3 @@ def get_inquiry(inquiry_id: int, db: Session = Depends(get_db), user: User = Dep
     if not i or i.user_id != user.id:
         raise HTTPException(404, "문의를 찾을 수 없습니다.")
     return _pack_inquiry(i)
-
-
-# --- 알림 설정 ---
-
-NOTIFY_FIELDS = ("notify_push", "notify_registration", "notify_analysis", "notify_recommend", "notify_event")
-
-
-@router.get("/notifications")
-def get_notifications(user: User = Depends(current_user)):
-    return {f: getattr(user, f) for f in NOTIFY_FIELDS}
-
-
-@router.patch("/notifications")
-def update_notifications(body: dict, db: Session = Depends(get_db), user: User = Depends(current_user)):
-    for f in NOTIFY_FIELDS:
-        if f in body:
-            setattr(user, f, bool(body[f]))
-    db.commit()
-    return {f: getattr(user, f) for f in NOTIFY_FIELDS}

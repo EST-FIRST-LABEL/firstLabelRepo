@@ -24,7 +24,6 @@ const MENU = [
   { href: "/mypage/favorites", label: "찜한 제품", Icon: I.Heart },
   { href: "/mypage/filters", label: "저장한 필터", Icon: I.Bookmark },
   { href: "/mypage/inquiries", label: "문의 내역", Icon: I.Chat },
-  { href: "/mypage/notifications", label: "알림 설정", Icon: I.Bell },
 ];
 
 export default function MyPage() {
@@ -44,11 +43,8 @@ export default function MyPage() {
 
   return (
     <Screen>
-      <header className="h-14 px-5 flex items-center justify-between border-b border-line/70">
-        <h1 className="font-bold text-[17px]">마이</h1>
-        <Link href="/mypage/notifications" aria-label="알림 설정">
-          <I.Bell className="w-[22px] h-[22px]" />
-        </Link>
+      <header className="h-14 px-5 flex items-center justify-center border-b border-line/70">
+        <h1 className="font-bold text-[17px] text-center">마이페이지</h1>
       </header>
 
       <div className="px-5 pt-6">
