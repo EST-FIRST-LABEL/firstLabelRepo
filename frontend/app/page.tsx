@@ -23,6 +23,8 @@ export default function HomePage() {
   const [q, setQ] = useState("");
   const [data, setData] = useState<HomeData | null>(null);
   const [history, setHistory] = useState<History[]>([]);
+  const [suggestions, setSuggestions] = useState<Product[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const loadHistory = useCallback(() => {
     if (!auth.token) return setHistory([]);
@@ -35,9 +37,28 @@ export default function HomePage() {
     loadHistory();
   }, [loadHistory]);
 
+  // 입력하는 동안 이름/브랜드/원재료에 검색어가 포함된 제품 상위 3개를 자동완성으로 보여준다.
+  useEffect(() => {
+    const keyword = q.trim();
+    if (!keyword) return;
+    const timer = setTimeout(() => {
+      api
+        .get<{ items: Product[] }>(`/api/v1/products/search?q=${encodeURIComponent(keyword)}&limit=3`)
+        .then((r) => setSuggestions(r.items))
+        .catch(() => setSuggestions([]));
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [q]);
+
   const search = (keyword: string) => {
     if (!keyword.trim()) return;
+    setShowSuggestions(false);
     router.push(`/search?q=${encodeURIComponent(keyword.trim())}`);
+  };
+
+  const goToProduct = (id: number) => {
+    setShowSuggestions(false);
+    router.push(`/products/${id}`);
   };
 
   const clearHistory = async () => {
@@ -69,17 +90,41 @@ export default function HomePage() {
           도와드릴게요 🌿
         </h1>
 
-        <div className="mt-5 flex items-center h-[56px] rounded-2xl border-[1.5px] border-brand px-5 gap-2">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && search(q)}
-            placeholder="제품명, 브랜드, 원재료를 검색해보세요"
-            className="flex-1 bg-transparent text-[15px] placeholder:text-[#b6bcc3]"
-          />
-          <button onClick={() => search(q)} aria-label="검색" className="text-ink">
-            <I.Search className="w-[22px] h-[22px]" />
-          </button>
+        <div className="relative">
+          <div className="mt-5 flex items-center h-[56px] rounded-2xl border-[1.5px] border-brand px-5 gap-2">
+            <input
+              value={q}
+              onChange={(e) => {
+                const value = e.target.value;
+                setQ(value);
+                if (!value.trim()) setSuggestions([]);
+              }}
+              onKeyDown={(e) => e.key === "Enter" && search(q)}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
+              placeholder="제품명, 브랜드, 원재료를 검색해보세요"
+              className="flex-1 bg-transparent text-[15px] placeholder:text-[#b6bcc3]"
+            />
+            <button onClick={() => search(q)} aria-label="검색" className="text-ink">
+              <I.Search className="w-[22px] h-[22px]" />
+            </button>
+          </div>
+
+          {showSuggestions && q.trim() && suggestions.length > 0 && (
+            <div className="absolute left-0 right-0 top-full mt-1.5 z-30 fl-card divide-y divide-line overflow-hidden">
+              {suggestions.map((p) => (
+                <button
+                  key={p.id}
+                  onMouseDown={() => goToProduct(p.id)}
+                  className="w-full flex items-center gap-3 px-4 h-[52px] text-left active:bg-mint-soft"
+                >
+                  <I.Search className="w-4 h-4 text-[#b6bcc3] shrink-0" />
+                  <span className="flex-1 min-w-0 truncate text-[14.5px]">{p.name}</span>
+                  <span className="text-[12.5px] text-sub shrink-0">{p.maker_name}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <section className="mt-7">
