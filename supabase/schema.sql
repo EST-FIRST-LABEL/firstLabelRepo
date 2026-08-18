@@ -7,14 +7,17 @@ create extension if not exists "vector";    -- 제품 임베딩
 
 
 CREATE TABLE products (
-	product_id BIGSERIAL NOT NULL, 
-	name VARCHAR(255) NOT NULL, 
+	product_id BIGSERIAL NOT NULL,
+	report_no VARCHAR(30),
+	name VARCHAR(255) NOT NULL,
 	maker_name VARCHAR(255) NOT NULL, 
 	category VARCHAR(100) NOT NULL, 
 	volume VARCHAR(50) NOT NULL, 
 	calories INTEGER NOT NULL, 
-	raw_ingredients TEXT NOT NULL, 
-	image_url TEXT NOT NULL, 
+	raw_ingredients TEXT NOT NULL,
+	allergy_info TEXT NOT NULL,
+	nutrition_info TEXT NOT NULL,
+	image_url TEXT NOT NULL,
 	image_source VARCHAR(20) NOT NULL, 
 	rating FLOAT NOT NULL, 
 	rating_count INTEGER NOT NULL, 
@@ -26,6 +29,23 @@ CREATE TABLE products (
 );
 
 CREATE INDEX ix_products_name ON products (name);
+CREATE UNIQUE INDEX ix_products_report_no ON products (report_no);
+
+CREATE TABLE product_ingredient_profiles (
+	product_id BIGINT NOT NULL,
+	source_hash VARCHAR(64) NOT NULL,
+	analysis_json TEXT NOT NULL,
+	tokens_json TEXT NOT NULL,
+	lactose_risk BOOLEAN NOT NULL,
+	general_risk BOOLEAN NOT NULL,
+	updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+	PRIMARY KEY (product_id),
+	FOREIGN KEY(product_id) REFERENCES products (product_id) ON DELETE CASCADE
+);
+
+CREATE INDEX ix_product_ingredient_profiles_source_hash ON product_ingredient_profiles (source_hash);
+CREATE INDEX ix_product_ingredient_profiles_lactose_risk ON product_ingredient_profiles (lactose_risk);
+CREATE INDEX ix_product_ingredient_profiles_general_risk ON product_ingredient_profiles (general_risk);
 
 
 CREATE TABLE users (

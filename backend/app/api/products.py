@@ -1,11 +1,23 @@
+import json
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core.db import Analysis, Product, SearchHistory, User, Wishlist, get_db
+from app.core.db import (
+    Analysis,
+    Product,
+    ProductIngredientProfile,
+    SavedFilter,
+    SearchHistory,
+    User,
+    Wishlist,
+    get_db,
+)
 from app.core.security import current_user, optional_user
 from app.services import alan, embedding_search
 from app.services.ingredients import analyze
+from app.services.product_profiles import profile_tokens
 
 router = APIRouter(prefix="/api/v1/products", tags=["products"])
 
@@ -170,6 +182,7 @@ async def product_analysis(
 @router.get("/{product_id}/recommendations")
 def recommendations(
     product_id: int,
+    filter_id: int | None = None,
     db: Session = Depends(get_db),
     user: User | None = Depends(optional_user),
 ):
@@ -178,21 +191,51 @@ def recommendations(
     if not base:
         raise HTTPException(404, "제품을 찾을 수 없습니다.")
 
-    base_set = _ingredient_set(base.raw_ingredients)
-    others = [p for p in db.scalars(select(Product)) if p.id != base.id]
+    if filter_id is None:
+        filter_name = "유당 주의"
+        filter_keywords = ["LACTOSE"]
+    else:
+        if not user:
+            raise HTTPException(401, "로그인이 필요합니다.")
+        saved_filter = db.get(SavedFilter, filter_id)
+        if not saved_filter or saved_filter.user_id != user.id:
+            raise HTTPException(404, "필터를 찾을 수 없습니다.")
+        filter_name = saved_filter.name
+        filter_keywords = json.loads(saved_filter.keywords or "[]")
 
-    def scored(pool: list[Product]) -> list[dict]:
+    base_profile = db.get(ProductIngredientProfile, base.id)
+    base_set = profile_tokens(base_profile, base.raw_ingredients)
+    stmt = (
+        select(Product, ProductIngredientProfile)
+        .outerjoin(ProductIngredientProfile, ProductIngredientProfile.product_id == Product.id)
+        .where(Product.id != base.id)
+    )
+    for keyword in filter_keywords:
+        if keyword == "LACTOSE":
+            stmt = stmt.where(Product.is_lactose_free.is_(True))
+        elif keyword == "GENERAL":
+            # 프로필이 없는 상품(general_risk가 NULL)은 안전을 확신할 수 없으므로
+            # 보수적으로 제외한다. 프로필이 있고 위험이 없는 상품만 통과한다 (Important 2).
+            stmt = stmt.where(ProductIngredientProfile.general_risk.is_(False))
+        elif keyword.strip():
+            combined = func.lower(Product.name + " " + Product.raw_ingredients)
+            stmt = stmt.where(~combined.contains(keyword.strip().lower()))
+
+    others = list(db.execute(stmt))
+    total_other = db.scalar(select(func.count()).select_from(Product).where(Product.id != base.id)) or 0
+
+    def scored(pool: list[tuple[Product, ProductIngredientProfile | None]]) -> list[dict]:
         out = []
-        for p in pool:
-            sim = _jaccard(base_set, _ingredient_set(p.raw_ingredients))
+        for p, profile in pool:
+            sim = _jaccard(base_set, profile_tokens(profile, p.raw_ingredients))
             out.append((sim, p))
         out.sort(key=lambda x: (-x[0], -x[1].rating))
         return out
 
-    same_cat = [p for p in others if p.category == base.category] or others
+    same_cat = [(p, profile) for p, profile in others if p.category == base.category] or others
     similar = scored(same_cat)[:3]
-    lactose_free = scored([p for p in others if p.is_lactose_free])[:3]
-    plant = scored([p for p in others if p.is_plant_based])[:3]
+    lactose_free = scored([(p, profile) for p, profile in others if p.is_lactose_free])[:3]
+    plant = scored([(p, profile) for p, profile in others if p.is_plant_based])[:3]
 
     ids = [p.id for _, p in similar + lactose_free + plant]
     wished = _wished_ids(db, user, ids)
@@ -210,6 +253,8 @@ def recommendations(
 
     return {
         "base_product": card(base, base.id in wished),
+        "active_filter": {"id": filter_id, "name": filter_name, "keywords": filter_keywords},
+        "excluded_count": total_other - len(others),
         "similar": pack(similar, "similar"),
         "lactose_free": pack(lactose_free, "lactose_free"),
         "plant_based": pack(plant, "plant_based"),
