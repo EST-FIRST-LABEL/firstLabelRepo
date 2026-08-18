@@ -143,10 +143,11 @@ function Step1({ onNext }: { onNext: () => void }) {
   return (
     <>
       <header className="px-5 pt-4 flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <I.Logo className="w-6 h-6 text-brand" />
-          <span className="font-extrabold tracking-[0.06em] text-brand text-[16px]">FIRST LABEL</span>
-        </div>
+        <img
+          src="/first-label-logo-tight.png"
+          alt="FIRST LABEL"
+          className="h-7 w-auto object-contain"
+        />
         <I.Bell className="w-6 h-6 text-ink" />
       </header>
       <StepBadge>3-1. 미등록 상품 안내</StepBadge>

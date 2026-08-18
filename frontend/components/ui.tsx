@@ -41,10 +41,11 @@ export function AppHeader({
         )}
         <div className="flex-1 flex justify-center items-center gap-1.5">
           {logo ? (
-            <>
-              <I.Logo className="w-5 h-5 text-brand" />
-              <span className="font-extrabold tracking-[0.06em] text-brand text-[15px]">FIRST LABEL</span>
-            </>
+            <img
+              src="/first-label-logo-tight.png"
+              alt="FIRST LABEL"
+              className="h-6 w-auto object-contain"
+            />
           ) : (
             <h1 className="font-bold text-[17px]">{title}</h1>
           )}
