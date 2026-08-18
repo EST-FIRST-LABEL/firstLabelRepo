@@ -5,7 +5,7 @@
 
 유당 관련 성분을 **최상단에 재배치하고 하이라이트**해 줍니다. 제주 해커톤 MVP.
 
-- 앱 https://first-label-app.vercel.app
+- 앱 https://first-label.vercel.app/
 - API https://first-label-api.vercel.app/docs
 
 ```
