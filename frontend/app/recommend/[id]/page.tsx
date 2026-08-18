@@ -2,15 +2,23 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import * as I from "@/components/icons";
 import { AppHeader, ProductThumb, Screen, Spinner, Stars, Toast, useToast } from "@/components/ui";
 import { ThreeTabNav } from "@/components/three-tab-nav";
-import { api, auth, type Product } from "@/lib/api";
+import { api, auth, type Product, type SavedFilter } from "@/lib/api";
+import { createRequestGuard, loadInitialRecommendations } from "./recommendation-loader";
 
 type Rec = Product & { similarity: number; tags: string[]; reason: string };
-type Data = { base_product: Product; similar: Rec[]; lactose_free: Rec[]; plant_based: Rec[] };
+type Data = {
+  base_product: Product;
+  active_filter: { id: number | null; name: string; keywords: string[] };
+  excluded_count: number;
+  similar: Rec[];
+  lactose_free: Rec[];
+  plant_based: Rec[];
+};
 
 const TABS = [
   { key: "similar", label: "유사 제품 추천" },
@@ -23,12 +31,67 @@ type TabKey = (typeof TABS)[number]["key"];
 export default function RecommendPage() {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<Data | null>(null);
+  const [filters, setFilters] = useState<SavedFilter[]>([]);
+  const [filterId, setFilterId] = useState<number | null>(null);
   const [tab, setTab] = useState<TabKey>("similar");
+  const [error, setError] = useState(false);
   const toast = useToast();
+  // 초기 로드/필터 전환 요청 순서를 관리해 out-of-order 응답을 무시한다 (Important 4).
+  const guard = useRef(createRequestGuard()).current;
 
   useEffect(() => {
-    api.get<Data>(`/api/v1/products/${id}/recommendations`).then(setData).catch(() => setData(null));
+    const token = guard.begin();
+    loadInitialRecommendations<Data>({ id, authenticated: Boolean(auth.token), get: api.get })
+      .then((result) => {
+        if (guard.isStale(token)) return;
+        setFilters(result.filters);
+        setFilterId(result.filterId);
+        setData(result.data);
+        setError(false);
+      })
+      .catch(() => {
+        if (guard.isStale(token)) return;
+        setError(true); // 무한 스피너 대신 오류/재시도 UI (Important 3)
+      });
+    // guard는 stable ref이므로 의존성에 넣지 않는다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  const selectFilter = async (nextFilterId: number | null) => {
+    const token = guard.begin();
+    setFilterId(nextFilterId);
+    setData(null);
+    setError(false);
+    const query = nextFilterId === null ? "" : `?filter_id=${nextFilterId}`;
+    try {
+      const result = await api.get<Data>(`/api/v1/products/${id}/recommendations${query}`);
+      if (guard.isStale(token)) return; // 더 최신 선택이 있으면 이 응답은 버린다
+      setData(result);
+    } catch {
+      if (guard.isStale(token)) return;
+      setError(true);
+    }
+  };
+
+  const retry = () => selectFilter(filterId);
+
+  if (error && !data) {
+    return (
+      <Screen>
+        <AppHeader title="AI 추천 대체 제품" />
+        <div className="flex flex-col items-center gap-4 px-6 py-24 text-center">
+          <p className="text-[14px] text-sub">추천을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>
+          <button
+            onClick={retry}
+            className="rounded-full bg-brand px-5 py-2.5 text-[13px] font-bold text-white"
+          >
+            다시 시도
+          </button>
+        </div>
+        <ThreeTabNav active="/recommend" />
+      </Screen>
+    );
+  }
 
   if (!data) {
     return (
@@ -50,6 +113,34 @@ export default function RecommendPage() {
       <AppHeader title="AI 추천 대체 제품" />
 
       <div className="px-5 pt-4">
+        <div className="mb-4">
+          <p className="mb-2 text-[13px] font-bold text-sub">적용할 안전 필터</p>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => selectFilter(null)}
+              className={`shrink-0 rounded-full border px-3.5 py-2 text-[13px] font-bold ${
+                filterId === null ? "border-brand bg-brand text-white" : "border-line bg-white text-sub"
+              }`}
+            >
+              유당 주의
+            </button>
+            {filters.map((filter) => (
+              <button
+                key={filter.id}
+                onClick={() => selectFilter(filter.id)}
+                className={`shrink-0 rounded-full border px-3.5 py-2 text-[13px] font-bold ${
+                  filterId === filter.id ? "border-brand bg-brand text-white" : "border-line bg-white text-sub"
+                }`}
+              >
+                {filter.name}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-[12.5px] text-sub">
+            {data.active_filter.name} 기준으로 맞지 않는 상품 {data.excluded_count}개를 제외했어요.
+          </p>
+        </div>
+
         <div className="grid grid-cols-3 gap-2.5">
           {TABS.map((item) => (
             <button
@@ -157,8 +248,8 @@ function RecommendationCard({
             {rank}
           </span>
 
-          <div className="flex h-[92px] w-[86px] shrink-0 items-center justify-center rounded-2xl border border-[#dcefe2] bg-[#fbfefc]">
-            <ProductThumb url={rec.image_url} name={rec.name} className="w-[66px] h-[78px]" />
+          <div className="flex h-[116px] w-[104px] shrink-0 items-center justify-center rounded-2xl border border-[#dcefe2] bg-[#fbfefc]">
+            <ProductThumb url={rec.image_url} name={rec.name} className="w-[86px] h-[104px]" />
           </div>
 
           <div className="min-w-0 flex-1 pt-0.5">

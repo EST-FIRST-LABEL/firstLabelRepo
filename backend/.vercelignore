@@ -1,7 +1,9 @@
 .venv/
+.env
 __pycache__/
 uploads/
 tests/
 *.db
+*.log
 Dockerfile
 .dockerignore

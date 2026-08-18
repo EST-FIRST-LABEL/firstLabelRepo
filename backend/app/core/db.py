@@ -13,6 +13,8 @@ from sqlalchemy import (
     Uuid,
     create_engine,
     func,
+    inspect,
+    text,
 )
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
@@ -62,12 +64,15 @@ class User(Base):
 class Product(Base):
     __tablename__ = "products"
     id: Mapped[int] = mapped_column("product_id", BigId, primary_key=True)
+    report_no: Mapped[str | None] = mapped_column(String(30), unique=True, index=True, nullable=True)
     name: Mapped[str] = mapped_column(String(255), index=True)
     maker_name: Mapped[str] = mapped_column(String(255), default="")
     category: Mapped[str] = mapped_column(String(100), default="")
     volume: Mapped[str] = mapped_column(String(50), default="")
     calories: Mapped[int] = mapped_column(Integer, default=0)
     raw_ingredients: Mapped[str] = mapped_column(Text, default="")
+    allergy_info: Mapped[str] = mapped_column(Text, default="")
+    nutrition_info: Mapped[str] = mapped_column(Text, default="")
     image_url: Mapped[str] = mapped_column(Text, default="")
     # "crawled" | "ai_search" | "user_upload"  (§9 B안)
     image_source: Mapped[str] = mapped_column(String(20), default="crawled")
@@ -99,6 +104,22 @@ class ProductEmbedding(Base):
     dim: Mapped[int] = mapped_column(Integer, default=EMBEDDING_DIM)
     embedding: Mapped[list[float]] = mapped_column(Vector(EMBEDDING_DIM).with_variant(Text, "sqlite"))
     created_at: Mapped[datetime] = mapped_column(TS, default=now, server_default=func.now())
+
+
+class ProductIngredientProfile(Base):
+    __tablename__ = "product_ingredient_profiles"
+
+    product_id: Mapped[int] = mapped_column(
+        BigId, ForeignKey("products.product_id", ondelete="CASCADE"), primary_key=True
+    )
+    source_hash: Mapped[str] = mapped_column(String(64), index=True)
+    analysis_json: Mapped[str] = mapped_column(Text, default="{}")
+    tokens_json: Mapped[str] = mapped_column(Text, default="[]")
+    lactose_risk: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    general_risk: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        TS, default=now, onupdate=now, server_default=func.now()
+    )
 
 
 class Wishlist(Base):
@@ -179,10 +200,30 @@ def get_db():
 
 def init_db() -> None:
     Base.metadata.create_all(engine)
+    ensure_catalog_schema(engine)
+
+
+def ensure_catalog_schema(bind) -> None:
+    inspector = inspect(bind)
+    if not inspector.has_table("products"):
+        return
+    existing = {column["name"] for column in inspector.get_columns("products")}
+    definitions = {
+        "report_no": "VARCHAR(30)",
+        "allergy_info": "TEXT NOT NULL DEFAULT ''",
+        "nutrition_info": "TEXT NOT NULL DEFAULT ''",
+    }
+    with bind.begin() as connection:
+        for name, ddl in definitions.items():
+            if name not in existing:
+                connection.execute(text(f"ALTER TABLE products ADD COLUMN {name} {ddl}"))
+        connection.execute(
+            text("CREATE UNIQUE INDEX IF NOT EXISTS ix_products_report_no ON products (report_no)")
+        )
 
 
 __all__ = [
-    "Base", "engine", "SessionLocal", "get_db", "init_db", "func",
+    "Base", "engine", "SessionLocal", "get_db", "init_db", "ensure_catalog_schema", "func",
     "User", "Product", "Wishlist", "SearchHistory", "SavedFilter",
-    "Registration", "Inquiry", "Analysis", "ProductEmbedding", "EMBEDDING_DIM",
+    "Registration", "Inquiry", "Analysis", "ProductEmbedding", "ProductIngredientProfile", "EMBEDDING_DIM",
 ]

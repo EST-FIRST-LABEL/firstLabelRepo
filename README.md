@@ -12,7 +12,7 @@
 first-label/
 ├─ frontend/          Next.js 16 + TypeScript + Tailwind v4 (모바일 UI)
 ├─ backend/           FastAPI + SQLAlchemy (Supabase Postgres)
-├─ scripts/           시드 / 전처리 스크립트
+├─ scripts/           카탈로그 가져오기 / 전처리 스크립트
 └─ docs/              API·스키마 문서
 ```
 
@@ -28,7 +28,7 @@ python -m venv .venv
 .venv/Scripts/activate          # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env            # 값 채우기 (아래 참고)
-python ../scripts/seed_products.py --demo-user
+python ../scripts/import_haccp_products.py <HACCP_CSV_PATH>
 uvicorn app.main:app --reload --port 8000
 ```
 
@@ -44,12 +44,6 @@ npm run dev                     # http://localhost:3000
 ```
 
 `frontend/.env.local` 에 `NEXT_PUBLIC_API_BASE=http://localhost:8000`.
-
-### 데모 계정
-
-`firstlabel2024` / `firstlabel2024!`
-
----
 
 ## 환경 변수 (backend/.env)
 

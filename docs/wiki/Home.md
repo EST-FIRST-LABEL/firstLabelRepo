@@ -4,7 +4,7 @@ FIRST LABEL은 식품 원재료 정보를 분석해 사용자가 주의해야 �
 
 현재 MVP의 핵심은 **유당 관련 성분 분석과 우선순위 재배치**입니다. OCR 또는 직접 입력으로 원재료 정보를 받아 위험도를 계산하고, 주의가 필요한 성분을 결과 화면 상단에 노출합니다.
 
-- 서비스: https://first-label-app.vercel.app
+- 서비스: https://first-label.vercel.app
 - API 문서: https://first-label-api.vercel.app/docs
 
 ## 문서 바로가기
