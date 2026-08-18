@@ -61,7 +61,13 @@ class Settings:
     EMBEDDING_SERVICE_URL: str = os.getenv("EMBEDDING_SERVICE_URL", "")
     EMBEDDING_API_KEY: str = os.getenv("EMBEDDING_API_KEY", "")
 
-    CORS_ORIGINS: list[str] = _csv("CORS_ORIGINS") or ["http://localhost:3000"]
+    # CORS_ORIGINS 미설정 시 기본 허용 목록 (프로덕션 프론트 + 로컬 개발).
+    CORS_ORIGINS: list[str] = _csv("CORS_ORIGINS") or [
+        "https://first-label.vercel.app",
+        "https://first-label-app.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:3002",
+    ]
     PUBLIC_BASE_URL: str = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000")
 
     UPLOAD_DIR: Path = WRITABLE_DIR / "uploads"
