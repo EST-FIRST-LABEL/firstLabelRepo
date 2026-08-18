@@ -58,9 +58,8 @@ export default function HomePage() {
   return (
     <Screen>
       <div className="px-5 pt-5">
-        <div className="flex justify-center items-center gap-2 pt-1">
-          <I.Logo className="w-7 h-7 text-brand" />
-          <span className="font-extrabold tracking-[0.12em] text-brand text-[18px]">FIRST LABEL</span>
+        <div className="flex justify-center pt-1">
+          <img src="/first-label-logo.webp" alt="FIRST LABEL" className="h-10 w-auto object-contain" />
         </div>
 
         <section className="mt-7 relative overflow-hidden rounded-[28px] bg-gradient-to-br from-white via-white to-mint-soft px-1 pb-1">
@@ -107,13 +106,6 @@ export default function HomePage() {
                 placeholder="궁금한 제품을 검색해보세요"
                 className="flex-1 min-w-0 bg-transparent text-[15px] placeholder:text-[#9299a4]"
               />
-              <button
-                onClick={() => router.push("/analysis")}
-                aria-label="라벨 촬영"
-                className="w-10 h-10 rounded-xl border border-brand/25 bg-mint-soft flex items-center justify-center text-brand shrink-0"
-              >
-                <I.Camera className="w-5 h-5" />
-              </button>
             </div>
 
             {showSuggestions && q.trim() && suggestions.length > 0 && (
