@@ -142,9 +142,14 @@ export default function ProductAnalysisPage() {
   const warnings = [...highRiskWarnings, ...levelOneWarnings].sort(
     (a, b) => RISK_PRIORITY[a.risk_level] - RISK_PRIORITY[b.risk_level],
   );
-  const overallRisk: RiskLevel = warnings[0]?.risk_level ?? "SAFE";
+  const hasLactoseWarning = warnings.length > 0;
+  const overallRisk: RiskLevel = warnings[0]?.risk_level ?? "CAUTION";
   const riskCard = RISK_CARD[overallRisk];
-  const firstWarningName = warnings[0]?.ingredient_name ?? "유당 관련 원재료";
+  const firstWarningName = warnings[0]?.ingredient_name ?? "";
+  const cardTitle = hasLactoseWarning ? riskCard.title : "유당 관련 주의 성분이 없어요";
+  const cardDescription = hasLactoseWarning
+    ? `${firstWarningName}이 확인됐어요. ${riskCard.description}`
+    : "현재 원재료에서는 유당 관련 주의 성분이 확인되지 않았어요.";
 
   return (
     <Screen>
@@ -174,25 +179,19 @@ export default function ProductAnalysisPage() {
 
           <div className={`rounded-[22px] border px-4 py-5 ${riskCard.border} ${riskCard.background}`}>
             <div className="flex items-start gap-3.5">
-              {overallRisk === "SAFE" ? (
-                <div className={`w-11 h-11 rounded-full ${riskCard.accent} text-white flex items-center justify-center shrink-0`}>
-                  <I.Check className="w-6 h-6" />
-                </div>
-              ) : (
-                <div className="w-12 h-12 shrink-0 flex items-center justify-center">
-                  <RiskRobotIcon color={riskCard.iconColor} />
-                </div>
-              )}
+              <div className="w-12 h-12 shrink-0 flex items-center justify-center">
+                <RiskRobotIcon color={riskCard.iconColor} />
+              </div>
 
               <div className="min-w-0 flex-1">
                 <span className={`inline-flex rounded-full px-2.5 py-1 text-[11.5px] font-bold ${riskCard.badge}`}>
                   {riskCard.level}
                 </span>
                 <h2 className={`mt-2 text-[22px] font-extrabold leading-tight ${riskCard.text}`}>
-                  {riskCard.title}
+                  {cardTitle}
                 </h2>
                 <p className="mt-3 text-[14px] leading-[1.7] text-ink/85">
-                  {overallRisk === "SAFE" ? riskCard.description : `${firstWarningName}이 확인됐어요. ${riskCard.description}`}
+                  {cardDescription}
                 </p>
                 <p className="mt-4 text-[12.5px] text-sub">
                   주의 원료 {warnings.length}개 · 전체 원료 {data.counts.total}개
