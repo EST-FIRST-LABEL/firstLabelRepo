@@ -40,6 +40,27 @@ def _wished_ids(db: Session, user: User | None, product_ids: list[int]) -> set[i
     return set(rows)
 
 
+@router.get("/autocomplete")
+def autocomplete(q: str = "", limit: int = 3, db: Session = Depends(get_db)):
+    """검색창 타입어헤드: 이름에 검색어가 포함된 제품 상위 N개.
+
+    매 키 입력마다 호출되므로 임베딩(무거움) 대신 가벼운 부분일치만 쓴다.
+    의미 기반 검색은 결과 페이지(/search)에서 담당한다.
+    """
+    keyword = q.strip()
+    if not keyword:
+        return {"items": []}
+    rows = list(
+        db.scalars(
+            select(Product)
+            .where(Product.name.ilike(f"%{keyword}%"))
+            .order_by(Product.rating.desc())
+            .limit(limit)
+        )
+    )
+    return {"items": [{"id": p.id, "name": p.name, "maker_name": p.maker_name} for p in rows]}
+
+
 @router.get("/search")
 def search(
     q: str = "",

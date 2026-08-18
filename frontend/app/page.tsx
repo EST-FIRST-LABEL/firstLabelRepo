@@ -10,6 +10,7 @@ import { api, auth, type Product } from "@/lib/api";
 
 type HomeData = { categories: { code: string; label: string; icon: string }[]; recommended: Product[] };
 type History = { id: number; keyword: string };
+type Suggestion = { id: number; name: string; maker_name: string };
 
 const CATEGORY_ICON: Record<string, (p: { className?: string }) => React.ReactElement> = {
   milk: I.Milk,
@@ -23,7 +24,7 @@ export default function HomePage() {
   const [q, setQ] = useState("");
   const [data, setData] = useState<HomeData | null>(null);
   const [history, setHistory] = useState<History[]>([]);
-  const [suggestions, setSuggestions] = useState<Product[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const loadHistory = useCallback(() => {
@@ -37,17 +38,30 @@ export default function HomePage() {
     loadHistory();
   }, [loadHistory]);
 
-  // 입력하는 동안 이름/브랜드/원재료에 검색어가 포함된 제품 상위 3개를 자동완성으로 보여준다.
+  // 입력하는 동안 이름에 검색어가 포함된 제품 상위 3개를 자동완성으로 보여준다.
+  // 매 키 입력마다 호출되므로 가벼운 /autocomplete(부분일치)를 쓴다. (의미 검색은 결과 페이지 담당)
   useEffect(() => {
     const keyword = q.trim();
-    if (!keyword) return;
+    if (!keyword) {
+      setSuggestions([]);
+      return;
+    }
+    let cancelled = false;
     const timer = setTimeout(() => {
       api
-        .get<{ items: Product[] }>(`/api/v1/products/search?q=${encodeURIComponent(keyword)}&limit=3`)
-        .then((r) => setSuggestions(r.items))
-        .catch(() => setSuggestions([]));
-    }, 250);
-    return () => clearTimeout(timer);
+        .get<{ items: Suggestion[] }>(`/api/v1/products/autocomplete?q=${encodeURIComponent(keyword)}&limit=3`)
+        // 늦게 도착한 이전 요청이 최신 결과를 덮어써 드롭다운이 깜빡이지 않도록 취소 가드
+        .then((r) => {
+          if (!cancelled) setSuggestions(r.items);
+        })
+        .catch(() => {
+          if (!cancelled) setSuggestions([]);
+        });
+    }, 200);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [q]);
 
   const search = (keyword: string) => {
