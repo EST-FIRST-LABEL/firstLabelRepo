@@ -38,6 +38,7 @@ const RISK_CARD = {
     accent: "bg-[#ff3f3f]",
     text: "text-[#e83232]",
     badge: "bg-[#fff0f0] text-[#e83232]",
+    iconColor: "#ff2a2a",
   },
   WARNING: {
     level: "2단계 · 중위험",
@@ -48,6 +49,7 @@ const RISK_CARD = {
     accent: "bg-[#ff8a00]",
     text: "text-[#e87900]",
     badge: "bg-[#fff3e8] text-[#e87900]",
+    iconColor: "#ff7a00",
   },
   CAUTION: {
     level: "1단계 · 저위험 / 주의",
@@ -58,6 +60,7 @@ const RISK_CARD = {
     accent: "bg-[#74E954]",
     text: "text-[#3eaa29]",
     badge: "bg-[#efffea] text-[#3eaa29]",
+    iconColor: "#74E954",
   },
   SAFE: {
     level: "안심",
@@ -68,6 +71,7 @@ const RISK_CARD = {
     accent: "bg-brand",
     text: "text-brand",
     badge: "bg-mint text-brand",
+    iconColor: "#38b46b",
   },
 } as const;
 
@@ -171,11 +175,13 @@ export default function ProductAnalysisPage() {
           <div className={`rounded-[22px] border px-4 py-5 ${riskCard.border} ${riskCard.background}`}>
             <div className="flex items-start gap-3.5">
               {overallRisk === "SAFE" ? (
-                <div className={`w-10 h-10 rounded-full ${riskCard.accent} text-white flex items-center justify-center shrink-0`}>
+                <div className={`w-11 h-11 rounded-full ${riskCard.accent} text-white flex items-center justify-center shrink-0`}>
                   <I.Check className="w-6 h-6" />
                 </div>
               ) : (
-                <div className={`w-10 h-10 rounded-full ${riskCard.accent} text-white flex items-center justify-center shrink-0 text-[22px] font-bold`}>!</div>
+                <div className="w-12 h-12 shrink-0 flex items-center justify-center">
+                  <RiskRobotIcon color={riskCard.iconColor} />
+                </div>
               )}
 
               <div className="min-w-0 flex-1">
@@ -258,6 +264,24 @@ export default function ProductAnalysisPage() {
       <Toast message={toast.message} />
       <ThreeTabNav active="/" />
     </Screen>
+  );
+}
+
+function RiskRobotIcon({ color }: { color: string }) {
+  return (
+    <svg viewBox="0 0 72 72" aria-hidden="true" className="w-12 h-12">
+      <line x1="36" y1="7" x2="36" y2="14" stroke={color} strokeWidth="4" strokeLinecap="round" />
+      <circle cx="36" cy="6" r="4" fill={color} />
+      <circle cx="10" cy="34" r="6" fill={color} />
+      <circle cx="62" cy="34" r="6" fill={color} />
+      <rect x="14" y="15" width="44" height="38" rx="16" fill="white" stroke={color} strokeWidth="4" />
+      <rect x="20" y="23" width="32" height="20" rx="10" fill="#2f2f2f" />
+      <circle cx="29" cy="33" r="3.2" fill="white" />
+      <circle cx="43" cy="33" r="3.2" fill="white" />
+      <path d="M33 39c2 1.6 4 1.6 6 0" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
+      <rect x="20" y="50" width="32" height="15" rx="7.5" fill={color} />
+      <text x="36" y="61" textAnchor="middle" fontSize="11" fontWeight="800" fill="white">AI</text>
+    </svg>
   );
 }
 
