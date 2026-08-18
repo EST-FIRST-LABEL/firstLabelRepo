@@ -85,7 +85,7 @@ export default function HomePage() {
 
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/milk-hero.webp"
+              src="/milk-hero.png"
               alt="유당 확인 일러스트"
               className="absolute right-0 top-1 w-[132px] h-auto object-contain"
             />
