@@ -65,11 +65,13 @@ export default function HomePage() {
     <Screen>
       <div className="px-5 pt-5">
         <div className="flex justify-center pt-1">
-          <img
-            src="/first-label-logo.webp?v=20260819"
-            alt="FIRST LABEL"
-            className="w-[180px] h-[76px] object-cover object-[50%_65%]"
-          />
+          <div className="relative w-[220px] h-[74px] overflow-hidden">
+            <img
+              src="/first-label-logo.webp?v=20260819-2"
+              alt="FIRST LABEL"
+              className="absolute left-1/2 top-[-40px] w-[220px] max-w-none -translate-x-1/2 h-auto"
+            />
+          </div>
         </div>
 
         <section className="mt-7 relative overflow-hidden rounded-[28px] bg-gradient-to-br from-white via-white to-mint-soft px-1 pb-1">
