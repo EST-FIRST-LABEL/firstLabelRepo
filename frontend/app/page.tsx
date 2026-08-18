@@ -63,16 +63,16 @@ export default function HomePage() {
 
   return (
     <Screen>
-      <div className="px-5 pt-5">
-        <div className="flex justify-center pt-1">
+      <div className="px-5 pt-3">
+        <div className="flex justify-center py-1">
           <img
-            src="/first-label-logo.webp?v=20260819-3"
+            src="/first-label-logo-tight.webp"
             alt="FIRST LABEL"
-            className="block w-[220px] h-auto object-contain"
+            className="block w-[250px] h-[58px] object-contain"
           />
         </div>
 
-        <section className="mt-7 relative overflow-hidden rounded-[28px] bg-gradient-to-br from-white via-white to-mint-soft px-1 pb-1">
+        <section className="mt-4 relative overflow-hidden rounded-[28px] bg-gradient-to-br from-white via-white to-mint-soft px-1 pb-1">
           <div className="inline-flex items-center gap-1.5 rounded-full bg-mint px-3.5 py-2 text-[12.5px] font-semibold text-brand">
             <I.Logo className="w-4 h-4" /> 유당 걱정일 때, 라벨부터 확인하세요!
           </div>
